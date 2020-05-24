@@ -8,13 +8,14 @@ pub enum Token {
 
     Comment(String),
     Character(char),
-    EOF,
+    Eof,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Attribute {
     pub name: String,
     pub value: String,
+    duplicate: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -80,6 +81,30 @@ impl Token {
             _ => false,
         }
     }
+
+    pub(crate) fn add_attribute(&mut self, name: String, value: String) {
+        match self {
+            Token::StartTag(t) => t.add_attribute(name, value),
+            Token::EndTag(t) => t.add_attribute(name, value),
+            _ => panic!("Cannot add_attribute on {:?}", self),
+        }
+    }
+
+    pub(crate) fn current_attribute(&mut self) -> Option<&Attribute> {
+        match self {
+            Token::StartTag(t) => t.current_attribute(),
+            Token::EndTag(t) => t.current_attribute(),
+            _ => panic!("Cannot current_attribute on {:?}", self),
+        }
+    }
+
+    pub(crate) fn current_attribute_mut(&mut self) -> Option<&mut Attribute> {
+        match self {
+            Token::StartTag(t) => t.current_attribute_mut(),
+            Token::EndTag(t) => t.current_attribute_mut(),
+            _ => panic!("Cannot current_attribute_mut on {:?}", self),
+        }
+    }
 }
 
 impl Doctype {
@@ -97,11 +122,43 @@ impl StartTag {
     pub(crate) fn push(&mut self, c: char) {
         self.name.push(c);
     }
+
+    pub(crate) fn add_attribute(&mut self, name: String, value: String) {
+        self.attributes.push(Attribute { name, value, duplicate: false })
+    }
+
+    pub(crate) fn attributes_iter(&mut self) -> impl Iterator<Item = &Attribute> + '_ {
+        self.attributes.iter()
+    }
+
+    pub(crate) fn current_attribute(&mut self) -> Option<&Attribute> {
+        self.attributes.last()
+    }
+
+    pub(crate) fn current_attribute_mut(&mut self) -> Option<&mut Attribute> {
+        self.attributes.last_mut()
+    }
 }
 
 impl EndTag {
     pub(crate) fn push(&mut self, c: char) {
         self.name.push(c);
+    }
+
+    pub(crate) fn add_attribute(&mut self, name: String, value: String) {
+        self.attributes.push(Attribute { name, value, duplicate: false })
+    }
+
+    pub(crate) fn attributes_iter(&mut self) -> impl Iterator<Item = &Attribute> + '_ {
+        self.attributes.iter()
+    }
+
+    pub(crate) fn current_attribute(&mut self) -> Option<&Attribute> {
+        self.attributes.last()
+    }
+
+    pub(crate) fn current_attribute_mut(&mut self) -> Option<&mut Attribute> {
+        self.attributes.last_mut()
     }
 
     // An appropriate end tag token is an end tag token whose tag name matches
@@ -112,5 +169,19 @@ impl EndTag {
     pub(crate) fn is_appropriate_end_tag(&self) -> bool {
         // TODO
         true
+    }
+}
+
+impl Attribute {
+    pub(crate) fn push_name(&mut self, c: char) {
+        self.name.push(c);
+    }
+
+    pub(crate) fn push_value(&mut self, c: char) {
+        self.value.push(c);
+    }
+
+    pub(crate) fn set_duplicate(&mut self) {
+        self.duplicate = true
     }
 }

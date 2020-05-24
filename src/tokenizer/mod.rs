@@ -39,7 +39,7 @@ where
             let mut b = [0; 1];
             match self.reader.read_exact(&mut b) {
                 Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
-                    return Ok(Character::EOF)
+                    return Ok(Character::Eof)
                 }
                 r => r,
             }?;
@@ -85,12 +85,12 @@ where
                 StateMachine::Error => panic!("StateMachine Error! {:?}", state),
                 StateMachine::MarkupDeclarationOpen(_) => {
                     if self.next_few_characters_are("--") {
-                        todo!("MarkupDeclarationOpen::--");
+                        state.on_next_few_characters(NextFewCharacters(Some("--".to_string())))
                     } else if self.next_few_characters_are("DOCTYPE") {
                         // TODO: should be case insensitive
                         state.on_next_few_characters(NextFewCharacters(Some("DOCTYPE".to_string())))
                     } else if self.next_few_characters_are("[CDATA[") {
-                        todo!("MarkupDeclarationOpen::[CDATA[");
+                        state.on_next_few_characters(NextFewCharacters(Some("[CDATA[".to_string())))
                     } else {
                         todo!("MarkupDeclarationOpen::*");
                     }
@@ -107,12 +107,16 @@ pub(crate) fn emit(token: Token) {
     println!("Emit: {:?}", token);
 }
 
+pub(crate) fn parse_error(msg: &str) {
+    println!("Parse Error: {}", msg);
+}
+
 #[derive(Clone, Debug, PartialEq, From)]
 pub enum Character {
     Char(char),
     LineFeed,
     Null,
-    EOF,
+    Eof,
 }
 
 // Is this just needed for MarkupDeclarationOpen?
