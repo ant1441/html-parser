@@ -17,4 +17,5 @@ testdata_tests! {
     simple0
     simple1
     serenity_welcome
+    twitter
 }

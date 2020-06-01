@@ -1,190 +1,168 @@
 use log::debug;
 
-use super::*;
-
-transitions!(StateMachine,
-  [
-    (Data, Character) => [CharacterReference, TagOpen, Error],
-    // (RcData, Character) => [CharacterReference, RcDataLessThanSign],
-    // (RawText, Character) => RawTextLessThanSign
-
-    (TagOpen, Character) => [MarkupDeclarationOpen, EndTagOpen, TagName, BogusComment, Data],
-    (EndTagOpen, Character) => [RcDataEndTagName, RcData],
-    (TagName, Character) => [BeforeAttributeName, SelfClosingStartTag, Data, TagName],
-
-    (RcDataEndTagName, Character) => [BeforeAttributeName, SelfClosingStartTag, Data, TagName, RcData],
-
-    (BeforeAttributeName, Character) => [BeforeAttributeName, AfterAttributeName, AttributeName],
-    (AttributeName, Character) => [AfterAttributeName, BeforeAttributeValue, AttributeName],
-    // (AfterAttributeName, Character) => [],
-    (BeforeAttributeValue, Character) => [AfterAttributeName, BeforeAttributeValue, AttributeName],
-    (AttributeValueDoubleQuoted, Character) => [AfterAttributeValueQuoted, CharacterReference, AttributeValueDoubleQuoted],
-    (AttributeValueSingleQuoted, Character) => [AfterAttributeValueQuoted, CharacterReference, AttributeValueSingleQuoted],
-    (AttributeValueUnquoted, Character) => [BeforeAttributeName, CharacterReference, AttributeValueUnquoted],
-    (AfterAttributeValueQuoted, Character) => [BeforeAttributeName, SelfClosingStartTag, Data, BeforeAttributeName],
-
-    (MarkupDeclarationOpen, NextFewCharacters) => [CommentStart, Doctype, CdataSection, BogusComment],
-    (CommentStart, Character) => [CommentStartDash, Data, Comment],
-    // (CommentStartDash, Character) => [],
-    (Comment, Character) => [CommentLessThanSign, CommentEndDash, Comment],
-
-    (CommentEndDash, Character) => [CommentEnd, Comment],
-    (CommentEnd, Character) => [Data, CommentEndBang, CommentEnd, Comment],
-
-    (Doctype, Character) => [BeforeDoctypeName, Error],
-    (BeforeDoctypeName, Character) => [DoctypeName, Data, Error],
-    (DoctypeName, Character) => [AfterDoctypeName, Data, DoctypeName, Error],
-
-    (CharacterReference, Character) => [NumericCharacterReference, Error],
-    (NamedCharacterReference, Character) => [NamedCharacterReference, AmbiguousAmpersand],
-
-
-    (NumericCharacterReferenceEnd, Character) => [/* TODO */Data, Error]
-  ]
-);
-
-impl StateMachine {
-    pub fn new() -> Self {
-        StateMachine::data()
-    }
-}
-
-impl Default for StateMachine {
-    fn default() -> Self {
-        StateMachine::data()
-    }
-}
+use super::{errors::ParseError, states::*, token, TransitionResult};
 
 /*
  * Transition Impls
  */
 
 impl Data {
-    pub fn on_character(self, c: Character) -> StateMachine {
+    pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('&') => {
-                StateMachine::character_reference(Box::new(StateMachine::Data(self)))
+                States::character_reference(Box::new(States::Data(self)), String::new()).into()
             }
-            Character::Char('<') => StateMachine::tag_open(),
+            Character::Char('<') => States::tag_open().into(),
             // Emit the current input character as a character token.
             Character::LineFeed => {
-                let token = Token::Character('\n');
-                emit(token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(token::Token::Character('\n'));
+                ret
             }
             Character::Char(c) => {
-                let token = Token::Character(c);
-                emit(token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(token::Token::Character(c));
+                ret
             }
             Character::Null => {
-                parse_error("unexpected-null-character parse error");
-                // Emit the current input character as a character token.
-                todo!("Data::on_character(NULL) the current character?")
+                let mut ret = States::data().into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                // Not sure if this should be NULL
+                ret.push_emit(token::Token::Character('\0'));
+                ret
             }
             // Emit an end-of-file token.
             Character::Eof => {
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_emit(token::Token::Eof);
+                ret
             }
         }
     }
 }
 
-///
-
 impl TagOpen {
-    pub fn on_character(self, c: Character) -> StateMachine {
+    pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('!') => StateMachine::markup_declaration_open(),
-            Character::Char('/') => StateMachine::end_tag_open(),
+            Character::Char('!') => States::markup_declaration_open().into(),
+            Character::Char('/') => States::end_tag_open().into(),
             Character::Char(a) if a.is_alphabetic() => {
                 let token = token::StartTag {
                     ..Default::default()
                 };
-                let reconsume_state = StateMachine::tag_name(token.into());
+                let reconsume_state = States::tag_name(token.into());
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
-            Character::Char('?') => todo!("TagOpen:?"),
-            Character::Eof => todo!("TagOpen::EOF"),
-            _ => todo!("TagOpen::_"),
+            Character::Char('?') => {
+                let reconsume_state = States::bogus_comment(String::new().into());
+                debug!("Reconsume on State: {:?}", reconsume_state);
+                let mut ret = reconsume_state.on_character(c);
+
+                ret.insert_parse_error(0, ParseError::UnexpectedQuestionMarkInsteadOfTagName);
+                ret
+            }
+            Character::Eof => {
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofBeforeTagName);
+                ret.push_emit(token::Token::Character('\u{003C}'));
+                ret.push_emit(token::Token::Eof);
+                ret
+            }
+            _ => {
+                let reconsume_state = States::data();
+                debug!("Reconsume on State: {:?}", reconsume_state);
+                let mut ret = reconsume_state.on_character(c);
+
+                ret.insert_emit(0, token::Token::Character('\u{003C}'));
+                ret.insert_parse_error(0, ParseError::InvalidFirstCharacterOfTagName);
+                ret
+            }
         }
     }
 }
 
 impl EndTagOpen {
-    pub fn on_character(self, c: Character) -> StateMachine {
+    pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(a) if a.is_alphabetic() => {
                 let token = token::EndTag {
                     ..Default::default()
                 };
-                let reconsume_state = StateMachine::tag_name(token.into());
+                let reconsume_state = States::tag_name(token.into());
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
             Character::Char('>') => {
-                parse_error("missing-end-tag-name parse error");
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_parse_error(ParseError::MissingEndTagName);
+                ret
             }
             Character::Eof => {
-                parse_error("eof-before-tag-name parse error");
-                emit(Token::Character('\u{003C}'));
-                emit(Token::Character('\u{002F}'));
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofBeforeTagName);
+                ret.push_emit(token::Token::Character('\u{003C}'));
+                ret.push_emit(token::Token::Character('\u{002F}'));
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             _ => {
-                parse_error("invalid-first-character-of-tag-name parse error");
-                let reconsume_state = StateMachine::bogus_comment(String::new().into());
+                let reconsume_state = States::bogus_comment(String::new().into());
                 debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = reconsume_state.on_character(c);
+
+                ret.insert_parse_error(0, ParseError::InvalidFirstCharacterOfTagName);
+                ret
             }
         }
     }
 }
 
 impl TagName {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match self.token {
-            Token::StartTag(_) | Token::EndTag(_) => (),
+            token::Token::StartTag(_) | token::Token::EndTag(_) => (),
             _ => unreachable!(),
         };
         match c {
             Character::Char('\t')
             | Character::LineFeed
             | Character::Char('\n')
-            | Character::Char(' ') => StateMachine::before_attribute_name(self.token),
-            Character::Char('/') => StateMachine::self_closing_start_tag(self.token),
+            | Character::Char(' ') => States::before_attribute_name(self.token).into(),
+            Character::Char('/') => States::self_closing_start_tag(self.token).into(),
             Character::Char('>') => {
-                emit(self.token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(self.token);
+                ret
             }
             Character::Char(c) if c.is_ascii_uppercase() => {
+                // TODO: unwrap
                 self.token.push(c.to_lowercase().next().unwrap());
-                StateMachine::tag_name(self.token)
+                States::tag_name(self.token).into()
             }
             Character::Null => {
-                parse_error("unexpected-null-character parse error");
                 self.token.push('\u{FFFD}');
-                StateMachine::tag_name(self.token)
+
+                let mut ret = States::tag_name(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret
             }
             Character::Eof => {
-                parse_error("eof-in-tag parse error");
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInTag);
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             Character::Char(c) => {
                 self.token.push(c);
-                StateMachine::tag_name(self.token)
+                States::tag_name(self.token).into()
             }
         }
     }
 }
 
 impl RcDataEndTagName {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -192,59 +170,64 @@ impl RcDataEndTagName {
             | Character::Char(' ')
                 if self.token.is_appropriate_end_tag() =>
             {
-                StateMachine::before_attribute_name(self.token)
+                States::before_attribute_name(self.token).into()
             }
             Character::Char('/') if self.token.is_appropriate_end_tag() => {
-                StateMachine::self_closing_start_tag(self.token)
+                States::self_closing_start_tag(self.token).into()
             }
             Character::Char('>') if self.token.is_appropriate_end_tag() => {
-                emit(self.token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(self.token);
+                ret
             }
             Character::Char(c) if c.is_ascii_uppercase() => {
                 self.token.push(c.to_lowercase().next().unwrap());
                 self.tmp.push(c);
-                StateMachine::rc_data_end_tag_name(self.token, self.tmp)
+                States::rc_data_end_tag_name(self.token, self.tmp).into()
             }
             Character::Char(c) if c.is_ascii_lowercase() => {
                 self.token.push(c);
                 self.tmp.push(c);
-                StateMachine::rc_data_end_tag_name(self.token, self.tmp)
+                States::rc_data_end_tag_name(self.token, self.tmp).into()
             }
             _ => {
-                emit(Token::Character('\u{003C}'));
-                emit(Token::Character('\u{002F}'));
-                for c in self.tmp.chars() {
-                    emit(Token::Character(c));
-                }
-                let reconsume_state = StateMachine::rc_data();
+                let reconsume_state = States::rc_data();
                 debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = reconsume_state.on_character(c);
+
+                ret.insert_emit(0, token::Token::Character('\u{003C}'));
+                ret.insert_emit(1, token::Token::Character('\u{002F}'));
+                for (i, c) in self.tmp.chars().enumerate() {
+                    ret.insert_emit(i + 2, token::Token::Character(c));
+                }
+
+                ret
             }
         }
     }
 }
 
 impl BeforeAttributeName {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
             | Character::Char('\n')
-            | Character::Char(' ') => StateMachine::before_attribute_name(self.token),
+            | Character::Char(' ') => States::before_attribute_name(self.token).into(),
             Character::Char('/') | Character::Char('>') | Character::Eof => {
-                let reconsume_state = StateMachine::after_attribute_name(self.token);
+                let reconsume_state = States::after_attribute_name(self.token);
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
             Character::Char('=') => {
-                parse_error("unexpected-equals-sign-before-attribute-name parse error");
                 self.token.add_attribute("=".to_string(), String::new());
-                StateMachine::attribute_name(self.token)
+                let mut ret = States::attribute_name(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedEqualsSignBeforeAttributeName);
+                ret
             }
             _ => {
                 self.token.add_attribute(String::new(), String::new());
-                let reconsume_state = StateMachine::attribute_name(self.token);
+                let reconsume_state = States::attribute_name(self.token);
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
@@ -253,7 +236,7 @@ impl BeforeAttributeName {
 }
 
 impl AttributeName {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -263,83 +246,90 @@ impl AttributeName {
             | Character::Char('>')
             | Character::Eof => {
                 self.check_duplicate_attribuite();
-                let reconsume_state = StateMachine::after_attribute_name(self.token);
+                let reconsume_state = States::after_attribute_name(self.token);
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
             Character::Char('=') => {
                 self.check_duplicate_attribuite();
-                StateMachine::before_attribute_value(self.token)
+                States::before_attribute_value(self.token).into()
             }
             Character::Char(c) if c.is_ascii_uppercase() => {
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_name(c.to_lowercase().next().unwrap());
-                StateMachine::attribute_name(self.token)
+                States::attribute_name(self.token).into()
             }
             Character::Null => {
-                parse_error("unexpected-null-character parse error");
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_name('\u{FFFD}');
-                StateMachine::attribute_name(self.token)
+                let mut ret = States::attribute_name(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret
             }
             Character::Char(c) => {
-                if c == '"' || c == '\'' || c == '<' {
-                    parse_error("unexpected-character-in-attribute-name")
-                }
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_name(c);
-                StateMachine::attribute_name(self.token)
+                let mut ret = States::attribute_name(self.token).into_transition_result();
+
+                if c == '"' || c == '\'' || c == '<' {
+                    ret.push_parse_error(ParseError::UnexpectedCharacterInAttributeName);
+                }
+                ret
             }
         }
     }
 
+    #[allow(unreachable_code, unused_variables)]
     fn check_duplicate_attribuite(&mut self) {
         // TODO
-        /*
-        if let Token::StartTag(tag) = self.token {
-            let current_attribute = tag.current_attribute();
-            let num_attributes = tag.attributes_iter().count();
+        if false {
+            //if let token::Token::StartTag(tag) = self.token {
+            if false {
+                let tag: token::StartTag = todo!();
 
-            for (n, attribute) in tag.attributes_iter().enumerate() {
-                if n == num_attributes {
-                    break;
-                }
+                let current_attribute = tag.current_attribute();
+                let num_attributes = tag.attributes_iter().count();
 
-                dbg!(attribute);
-                /*
-                if attribute.name == current_attribute.name {
-                    current_attribute.set_duplicate();
+                for (n, attribute) in tag.attributes_iter().enumerate() {
+                    if n == num_attributes {
                         break;
-                }
-                */
+                    }
 
-            }
+                    dbg!(attribute);
+                    /*
+                    if attribute.name == current_attribute.name {
+                        current_attribute.set_duplicate();
+                            break;
+                    }
+                    */
+                }
                 todo!()
-        } else if let Token::EndTag(tag) = self.token {
-            todo!()
-        } else {
-            panic!("Unexpected token in AttributeName::check_duplicate_attribuite");
+            // } else if let token::Token::EndTag(tag) = self.token {
+            //     todo!()
+            } else {
+                panic!("Unexpected token in AttributeName::check_duplicate_attribuite");
+            }
         }
-        */
     }
 }
 
 impl BeforeAttributeValue {
-    pub fn on_character(self, c: Character) -> StateMachine {
+    pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
             | Character::Char('\n')
-            | Character::Char(' ') => StateMachine::before_attribute_value(self.token),
-            Character::Char('"') => StateMachine::attribute_value_double_quoted(self.token),
-            Character::Char('\'') => StateMachine::attribute_value_single_quoted(self.token),
+            | Character::Char(' ') => States::before_attribute_value(self.token).into(),
+            Character::Char('"') => States::attribute_value_double_quoted(self.token).into(),
+            Character::Char('\'') => States::attribute_value_single_quoted(self.token).into(),
             Character::Char('>') => {
-                parse_error("missing-attribute-value parse error");
-                emit(self.token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_parse_error(ParseError::MissingAttributeValue);
+                ret.push_emit(self.token);
+                ret
             }
             _ => {
-                let reconsume_state = StateMachine::attribute_value_unquoted(self.token);
+                let reconsume_state = States::attribute_value_unquoted(self.token);
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
@@ -348,166 +338,241 @@ impl BeforeAttributeValue {
 }
 
 impl AttributeValueDoubleQuoted {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('"') => StateMachine::after_attribute_value_quoted(self.token),
-            Character::Char('&') => StateMachine::character_reference(Box::new(
-                StateMachine::AttributeValueDoubleQuoted(self),
-            )),
+            Character::Char('"') => States::after_attribute_value_quoted(self.token).into(),
+            Character::Char('&') => States::character_reference(
+                Box::new(States::AttributeValueDoubleQuoted(self)),
+                String::new(),
+            )
+            .into(),
             Character::Null => {
-                parse_error("unexpected-null-character parse error");
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_value('\u{FFFD}');
-                StateMachine::attribute_value_double_quoted(self.token)
+
+                let mut ret =
+                    States::attribute_value_double_quoted(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret
             }
             Character::Eof => {
-                parse_error("eof-in-tag parse error");
-                emit(self.token);
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInTag);
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             Character::LineFeed => {
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_value('\n');
-                StateMachine::attribute_value_double_quoted(self.token)
+                States::attribute_value_double_quoted(self.token).into()
             }
             Character::Char(c) => {
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_value(c);
-                StateMachine::attribute_value_double_quoted(self.token)
+                States::attribute_value_double_quoted(self.token).into()
             }
         }
     }
 }
 
 impl AttributeValueSingleQuoted {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\'') => StateMachine::after_attribute_value_quoted(self.token),
-            Character::Char('&') => StateMachine::character_reference(Box::new(
-                StateMachine::AttributeValueSingleQuoted(self),
-            )),
+            Character::Char('\'') => States::after_attribute_value_quoted(self.token).into(),
+            Character::Char('&') => States::character_reference(
+                Box::new(States::AttributeValueSingleQuoted(self)),
+                String::new(),
+            )
+            .into(),
             Character::Null => {
-                parse_error("unexpected-null-character parse error");
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_value('\u{FFFD}');
-                StateMachine::attribute_value_single_quoted(self.token)
+
+                let mut ret =
+                    States::attribute_value_single_quoted(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret
             }
             Character::Eof => {
-                parse_error("eof-in-tag parse error");
-                emit(self.token);
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInTag);
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             Character::LineFeed => {
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_value('\n');
-                StateMachine::attribute_value_single_quoted(self.token)
+                States::attribute_value_single_quoted(self.token).into()
             }
             Character::Char(c) => {
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_value(c);
-                StateMachine::attribute_value_single_quoted(self.token)
+                States::attribute_value_single_quoted(self.token).into()
             }
         }
     }
 }
 
 impl AttributeValueUnquoted {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
             | Character::Char('\n')
-            | Character::Char(' ') => StateMachine::before_attribute_name(self.token),
-            Character::Char('&') => StateMachine::character_reference(Box::new(
-                StateMachine::AttributeValueUnquoted(self),
-            )),
+            | Character::Char(' ') => States::before_attribute_name(self.token).into(),
+            Character::Char('&') => States::character_reference(
+                Box::new(States::AttributeValueUnquoted(self)),
+                String::new(),
+            )
+            .into(),
             Character::Char('>') => {
-                emit(self.token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(self.token);
+                ret
             }
             Character::Null => {
-                parse_error("unexpected-null-character parse error");
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_value('\u{FFFD}');
-                StateMachine::attribute_value_unquoted(self.token)
+
+                let mut ret = States::attribute_value_unquoted(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret
             }
 
             Character::Eof => {
-                parse_error("eof-in-tag parse error");
-                emit(self.token);
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInTag);
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             Character::Char(c) => {
-                if c == '"' || c == '\'' || c == '<' || c == '=' || c == '`' {
-                    parse_error("unexpected-character-in-unquoted-attribute-value");
-                }
-
                 let attribute = self.token.current_attribute_mut().unwrap();
                 attribute.push_value(c);
-                StateMachine::attribute_value_unquoted(self.token)
+
+                let mut ret = States::attribute_value_unquoted(self.token).into_transition_result();
+                if c == '"' || c == '\'' || c == '<' || c == '=' || c == '`' {
+                    ret.push_parse_error(ParseError::UnexpectedCharacterInUnquotedAttributeValue);
+                }
+                ret
             }
         }
     }
 }
 
 impl AfterAttributeValueQuoted {
-    pub fn on_character(self, c: Character) -> StateMachine {
+    pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
             | Character::Char('\n')
-            | Character::Char(' ') => StateMachine::before_attribute_name(self.token),
-            Character::Char('/') => StateMachine::self_closing_start_tag(self.token),
+            | Character::Char(' ') => States::before_attribute_name(self.token).into(),
+            Character::Char('/') => States::self_closing_start_tag(self.token).into(),
             Character::Char('>') => {
-                emit(self.token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(self.token);
+                ret
             }
             Character::Eof => {
-                parse_error("eof-in-tag parse error");
-                emit(self.token);
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInTag);
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             _ => {
-                parse_error("missing-whitespace-between-attributes");
-
-                let reconsume_state = StateMachine::before_attribute_name(self.token);
+                let reconsume_state = States::before_attribute_name(self.token);
                 debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = reconsume_state.on_character(c);
+
+                ret.insert_parse_error(0, ParseError::MissingWhitespaceBetweenAttributes);
+                ret
+            }
+        }
+    }
+}
+
+impl BogusComment {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
+        match c {
+            Character::Char('>') => {
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(self.token);
+                ret
+            }
+            Character::Eof => {
+                let mut ret = States::term().into_transition_result();
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
+            }
+            Character::Null => {
+                self.token.push('\u{FFFD}');
+
+                let mut ret = States::bogus_comment(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret
+            }
+            Character::LineFeed => {
+                self.token.push('\n');
+                States::comment(self.token).into()
+            }
+            Character::Char(c) => {
+                self.token.push(c);
+                States::bogus_comment(self.token).into()
             }
         }
     }
 }
 
 impl MarkupDeclarationOpen {
-    pub fn on_next_few_characters(self, next: NextFewCharacters) -> StateMachine {
+    pub fn on_next_few_characters(self, next: NextFewCharacters) -> TransitionResult {
         if next.as_ref().is_none() {
-            todo!("MarkupDeclarationOpen::on_next_few_characters(*)")
+            let mut ret = States::bogus_comment(String::new().into()).into_transition_result();
+            ret.push_parse_error(ParseError::IncorrectlyOpenedComment);
+            ret
         } else {
             match next.as_ref().as_ref().unwrap().as_str() {
-                "DOCTYPE" => StateMachine::doctype(),
-                "--" => StateMachine::comment_start(String::new().into()),
-                "[CDATA[" => todo!("MarkupDeclarationOpen::on_next_few_characters([CDATA[)"),
+                "DOCTYPE" => States::doctype().into(),
+                "--" => States::comment_start(String::new().into()).into(),
+                "[CDATA[" => {
+                    //     If there is an adjusted current node and it is not an element in the HTML namespace, then switch to the CDATA section state.
+                    if let Some(_node) = self.get_adjusted_current_node() {
+                        // if !node.is_element_in_html_namespace() {
+                        return States::cdata_section().into();
+                        // }
+                    }
+                    //     Otherwise, this is a cdata-in-html-content parse error.
+                    //     Create a comment token whose data is the "[CDATA[" string. Switch to the bogus comment state.
+                    let mut ret = States::bogus_comment("[CDATA[".to_string().into())
+                        .into_transition_result();
+                    ret.push_parse_error(ParseError::CdataInHtmlContent);
+                    ret
+                }
                 _ => unreachable!(),
             }
         }
     }
+
+    fn get_adjusted_current_node(&self) -> Option<()> {
+        todo!("MarkupDeclarationOpen::get_adjusted_current_node")
+    }
 }
 
 impl CommentStart {
-    pub fn on_character(self, c: Character) -> StateMachine {
+    pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('-') => StateMachine::comment_start_dash(self.token),
+            Character::Char('-') => States::comment_start_dash(self.token).into(),
             Character::Char('>') => {
-                parse_error("abrupt-closing-of-empty-comment parse error");
-                emit(self.token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_parse_error(ParseError::AbruptClosingOfEmptyComment);
+                ret.push_emit(self.token);
+                ret
             }
             _ => {
-                let reconsume_state = StateMachine::comment(self.token);
+                let reconsume_state = States::comment(self.token);
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
@@ -516,24 +581,26 @@ impl CommentStart {
 }
 
 impl CommentStartDash {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('-') => StateMachine::comment_end(self.token),
+            Character::Char('-') => States::comment_end(self.token).into(),
             Character::Char('>') => {
-                parse_error("abrupt-closing-of-empty-comment parse error");
-                emit(self.token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_parse_error(ParseError::AbruptClosingOfEmptyComment);
+                ret.push_emit(self.token);
+                ret
             }
             Character::Eof => {
-                parse_error("eof-in-comment parse error");
-                emit(self.token);
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInComment);
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             _ => {
                 self.token.push('-');
 
-                let reconsume_state = StateMachine::comment(self.token);
+                let reconsume_state = States::comment(self.token);
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
@@ -542,50 +609,54 @@ impl CommentStartDash {
 }
 
 impl Comment {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('<') => {
                 self.token.push('<');
-                StateMachine::comment_less_than_sign(self.token)
+                States::comment_less_than_sign(self.token).into()
             }
-            Character::Char('-') => StateMachine::comment_end_dash(self.token),
+            Character::Char('-') => States::comment_end_dash(self.token).into(),
             Character::Null => {
-                parse_error("unexpected-null-character parse error");
                 self.token.push('\u{FFFD}');
-                StateMachine::comment(self.token)
+
+                let mut ret = States::comment(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret
             }
             Character::Eof => {
-                parse_error("eof-in-comment parse error");
-                emit(self.token);
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInComment);
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             Character::LineFeed => {
                 self.token.push('\n');
-                StateMachine::comment(self.token)
+                States::comment(self.token).into()
             }
             Character::Char(c) => {
                 self.token.push(c);
-                StateMachine::comment(self.token)
+                States::comment(self.token).into()
             }
         }
     }
 }
 
 impl CommentEndDash {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('-') => StateMachine::comment_end(self.token),
+            Character::Char('-') => States::comment_end(self.token).into(),
             Character::Eof => {
-                parse_error("eof-in-tag parse error");
-                emit(self.token);
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInTag);
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             _ => {
                 self.token.push('-');
 
-                let reconsume_state = StateMachine::comment(self.token);
+                let reconsume_state = States::comment(self.token);
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
@@ -594,28 +665,30 @@ impl CommentEndDash {
 }
 
 impl CommentEnd {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('>') => {
-                emit(self.token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(self.token);
+                ret
             }
-            Character::Char('!') => StateMachine::comment_end_bang(self.token),
+            Character::Char('!') => States::comment_end_bang(self.token).into(),
             Character::Char('-') => {
                 self.token.push('-');
-                StateMachine::comment_end(self.token)
+                States::comment_end(self.token).into()
             }
             Character::Eof => {
-                parse_error("eof-in-tag parse error");
-                emit(self.token);
-                emit(Token::Eof);
-                StateMachine::term()
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInTag);
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
             }
             _ => {
                 self.token.push('-');
                 self.token.push('-');
 
-                let reconsume_state = StateMachine::comment(self.token);
+                let reconsume_state = States::comment(self.token);
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
@@ -624,95 +697,213 @@ impl CommentEnd {
 }
 
 impl Doctype {
-    pub fn on_character(self, c: Character) -> StateMachine {
+    pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
             | Character::Char('\n')
-            | Character::Char(' ') => StateMachine::before_doctype_name(),
+            | Character::Char(' ') => States::before_doctype_name().into(),
             Character::Char('>') => {
-                let reconsume_state = StateMachine::before_doctype_name();
+                let reconsume_state = States::before_doctype_name();
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
             }
-            Character::Eof => todo!("Doctype::on_character(EOF)"),
-            _ => todo!("Doctype::on_character(*)"),
+            Character::Eof => {
+                let token = token::Doctype {
+                    name: None,
+                    force_quirks: token::ForceQuirksFlag::On,
+                    ..Default::default()
+                };
+
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInDoctype);
+                ret.push_emit(token.into());
+                ret.push_emit(token::Token::Eof);
+                ret
+            }
+            _ => {
+                let reconsume_state = States::before_doctype_name();
+                debug!("Reconsume on State: {:?}", reconsume_state);
+                let mut ret = reconsume_state.on_character(c);
+
+                ret.insert_parse_error(0, ParseError::MissingWhitespaceBeforeDoctypeName);
+                ret
+            }
         }
     }
 }
 
 impl BeforeDoctypeName {
-    pub fn on_character(self, c: Character) -> StateMachine {
+    pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
             | Character::Char('\n')
-            | Character::Char(' ') => StateMachine::before_doctype_name(),
+            | Character::Char(' ') => States::before_doctype_name().into(),
             Character::Char(c) if c.is_ascii_uppercase() => {
-                todo!("BeforeDoctypeName::on_character(UPPER)")
+                let token = token::Doctype {
+                    name: Some(c.to_lowercase().next().unwrap().to_string()),
+                    ..Default::default()
+                };
+                States::doctype_name(token.into()).into()
             }
-            Character::Null => todo!("BeforeDoctypeName::on_character(NULL)"),
-            Character::Char('>') => todo!("BeforeDoctypeName::on_character(>)"),
-            Character::Eof => todo!("BeforeDoctypeName::on_character(EOF)"),
+            Character::Null => {
+                let token = token::Doctype {
+                    name: Some("\u{FFFD}".to_string()),
+                    ..Default::default()
+                };
+
+                let mut ret = States::doctype_name(token.into()).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret
+            }
+            Character::Char('>') => {
+                let token = token::Doctype {
+                    name: None,
+                    force_quirks: token::ForceQuirksFlag::On,
+                    ..Default::default()
+                };
+
+                let mut ret = States::data().into_transition_result();
+                ret.push_parse_error(ParseError::MissingDoctypeName);
+                ret.push_emit(token.into());
+                ret
+            }
+            Character::Eof => {
+                let token = token::Doctype {
+                    name: None,
+                    force_quirks: token::ForceQuirksFlag::On,
+                    ..Default::default()
+                };
+
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInDoctype);
+                ret.push_emit(token.into());
+                ret.push_emit(token::Token::Eof);
+                ret
+            }
             Character::Char(c) => {
                 let token = token::Doctype {
                     name: Some(c.to_string()),
                     ..Default::default()
                 };
-                StateMachine::doctype_name(token.into())
+                States::doctype_name(token.into()).into()
             }
         }
     }
 }
 
 impl DoctypeName {
-    pub fn on_character(mut self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
             | Character::Char('\n')
-            | Character::Char(' ') => StateMachine::after_doctype_name(),
+            | Character::Char(' ') => States::after_doctype_name().into(),
             Character::Char('>') => {
-                emit(self.token);
-                StateMachine::data()
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(self.token);
+                ret
             }
             Character::Char(c) if c.is_ascii_uppercase() => {
                 self.token.push(c.to_lowercase().next().unwrap());
-                StateMachine::doctype_name(self.token)
+                States::doctype_name(self.token).into()
             }
-            Character::Null => todo!("DoctypeName::on_character(NULL)"),
-            Character::Eof => todo!("DoctypeName::on_character(EOF)"),
+            Character::Null => {
+                self.token.push('\u{FFFD}');
+
+                let mut ret = States::doctype_name(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret
+            }
+            Character::Eof => {
+                self.token.set_force_quirks(token::ForceQuirksFlag::On);
+
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInDoctype);
+                ret.push_emit(self.token);
+                ret.push_emit(token::Token::Eof);
+                ret
+            }
             Character::Char(c) => {
                 self.token.push(c);
-                StateMachine::doctype_name(self.token)
+                States::doctype_name(self.token).into()
             }
         }
     }
 }
 
 impl CharacterReference {
-    pub fn on_character(self, c: Character) -> StateMachine {
+    pub fn on_character(mut self, _: Character) -> TransitionResult {
+        self.tmp.push('&');
+        States::_character_reference1(self.return_state, self.tmp).into()
+    }
+}
+
+impl _CharacterReference1 {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char(a) if a.is_alphanumeric() => {
-                // Reconsume
-                let reconsume_state = NamedCharacterReference {};
+                let reconsume_state = States::numeric_character_reference(self.tmp);
                 debug!("Reconsume on State: {:?}", reconsume_state);
                 reconsume_state.on_character(c)
-            },
-            Character::Char('#') => todo!("CharacterReference::#"),
-            _ => todo!("CharacterReference::AnythingElse - Flush code points consumed as a character reference. Reconsume in the return state."),
+            }
+            Character::Char('#') => {
+                self.tmp.push('#');
+                let reconsume_state = States::named_character_reference();
+                debug!("Reconsume on State: {:?}", reconsume_state);
+                reconsume_state.on_character(c)
+            }
+            _ => {
+                let mut to_emit = Vec::new();
+                let chars = self.tmp.chars().collect::<Vec<_>>();
+
+                if let Some(token) = self.get_attribute_token() {
+                    for c in chars {
+                        token.push(c)
+                    }
+                } else {
+                    for c in chars {
+                        to_emit.insert(0, token::Token::Character(c));
+                    }
+                }
+
+                let reconsume_state: Box<States> = self.return_state;
+                debug!("Reconsume on Return State: {:?}", reconsume_state);
+                let mut ret = reconsume_state.on_character(c);
+
+                // Pop off items and prepend them to the emit queue
+                while let Some(emit) = to_emit.pop() {
+                    ret.insert_emit(0, emit);
+                }
+
+                ret
+            }
+        }
+    }
+
+    fn get_attribute_token(&mut self) -> Option<&mut token::Token> {
+        match *self.return_state {
+            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token }) => {
+                Some(token)
+            }
+            States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token }) => {
+                Some(token)
+            }
+            States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
+            _ => None,
         }
     }
 }
 
 impl NamedCharacterReference {
-    pub fn on_character(self, _: Character) -> StateMachine {
+    pub fn on_character(self, _: Character) -> TransitionResult {
         todo!("NamedCharacterReference::on_character")
     }
 }
 
 impl NumericCharacterReferenceEnd {
-    pub fn on_character(self, _: Character) -> StateMachine {
+    pub fn on_character(self, _: Character) -> TransitionResult {
         todo!("NumericCharacterReferenceEnd::on_character")
     }
 }
