@@ -1,3 +1,5 @@
+use std::fmt;
+
 use derive_more::From;
 
 #[derive(Clone, Debug, PartialEq, Eq, From)]
@@ -161,6 +163,21 @@ impl Token {
     }
 }
 
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use Token::*;
+        match self {
+            Doctype(t) => write!(f, "{}", t),
+            StartTag(t) => write!(f, "{}", t),
+            EndTag(t) => write!(f, "{}", t),
+            Comment(t) => write!(f, "Comment({})", t),
+            Characters(t) => write!(f, "Characters({:?})", t),
+            Character(t) => write!(f, "Character({})", t),
+            Eof => write!(f, "Token(EOF)"),
+        }
+    }
+}
+
 impl Doctype {
     pub(crate) fn push(&mut self, c: char) {
         if self.name.is_none() {
@@ -182,6 +199,21 @@ impl Doctype {
 
     pub(crate) fn set_force_quirks(&mut self, f: ForceQuirksFlag) {
         self.force_quirks = f
+    }
+}
+
+impl fmt::Display for Doctype {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        assert!(self.name.is_some(), "`tokenizer::token::Doctype` doesn't implement `std::fmt::Display` when `name` is not set");
+        assert!(self.public_identifier.is_none(), "`tokenizer::token::Doctype` doesn't implement `std::fmt::Display` when `public_identifier` is set");
+        assert!(self.system_identifier.is_none(), "`tokenizer::token::Doctype` doesn't implement `std::fmt::Display` when `system_identifier` is set");
+        assert!(self.force_quirks == ForceQuirksFlag::Off, "`tokenizer::token::Doctype` doesn't implement `std::fmt::Display` when `force_quirks` is not Off");
+
+        if let Some(ref name) = self.name {
+            write!(f, "<!doctype {}>", name)
+        } else {
+            unreachable!()
+        }
     }
 }
 
@@ -216,6 +248,21 @@ impl StartTag {
 
     pub(crate) fn set_self_closing(&mut self, f: SelfClosingFlag) {
         self.self_closing = f
+    }
+}
+
+impl fmt::Display for StartTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        assert!(self.self_closing == SelfClosingFlag::Unset, "`tokenizer::token::StartTag` doesn't implement `std::fmt::Display` when `self_closing` is set");
+
+        write!(f, "<{}", self.name)?;
+        for attribute in self.attributes.iter() {
+            write!(f, " {}", attribute.name)?;
+            if !attribute.value.is_empty() {
+                write!(f, "=\"{}\"", attribute.value)?;
+            }
+        }
+        write!(f, ">")
     }
 }
 
@@ -260,6 +307,21 @@ impl EndTag {
 
     pub(crate) fn set_self_closing(&mut self, f: SelfClosingFlag) {
         self.self_closing = f
+    }
+}
+
+impl fmt::Display for EndTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        assert!(self.self_closing == SelfClosingFlag::Unset, "`tokenizer::token::StartTag` doesn't implement `std::fmt::Display` when `self_closing` is set");
+
+        write!(f, "</{}", self.name)?;
+        for attribute in self.attributes.iter() {
+            write!(f, " {}", attribute.name)?;
+            if !attribute.value.is_empty() {
+                write!(f, "=\"{}\"", attribute.value)?;
+            }
+        }
+        write!(f, ">")
     }
 }
 

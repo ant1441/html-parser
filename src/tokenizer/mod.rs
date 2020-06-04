@@ -41,6 +41,9 @@ where
 {
     pub fn new(data: R) -> Self {
         Tokenizer {
+            // TODO, we assume this is UTF-8
+            // To be standard compliant we should use the
+            // [encoding sniffing algorithm](https://html.spec.whatwg.org/multipage/parsing.html#encoding-sniffing-algorithm)
             reader: BufReader::new(data),
             state: Some(States::new()),
 
@@ -262,6 +265,6 @@ where
     }
 
     pub fn emit(&self, token: &Token) {
-        println!("[EMIT]: {:?}", token);
+        println!("[EMIT]: {}", token);
     }
 }
