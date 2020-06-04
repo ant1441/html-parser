@@ -3,7 +3,7 @@
 
 use std::cell::Cell;
 
-use super::{Emit, ParseError, Error, Result, States, Token};
+use super::{Emit, Error, ParseError, Result, States, Token};
 
 pub struct TransitionResult {
     state: Result<States>,

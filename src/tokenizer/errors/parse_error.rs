@@ -35,7 +35,8 @@ pub enum ParseError {
     /// This error occurs if the parser encounters the end of the input stream in text that resembles an HTML comment inside script element content (e.g., <script><!-- foo).
     /// Syntactic structures that resemble HTML comments in script elements are parsed as text content. They can be a part of a scripting language-specific syntactic structure or be treated as an HTML-like comment, if the scripting language supports them (e.g., parsing rules for HTML-like comments can be found in Annex B of the JavaScript specification). The common reason for this error is a violation of the restrictions for contents of script elements. [JAVASCRIPT]
     EofInScriptHtmlCommentLikeText,
-    /// This error occurs if the parser encounters the end of the input stream in a start tag or an end tag (e.g., <div id=). Such a tag is completely ignored.
+    // (e.g., \<div id=) hangs rustdoc (rustdoc 1.43.1 (8d69840ab 2020-05-04))
+    /// This error occurs if the parser encounters the end of the input stream in a start tag or an end tag (e.g., \<div id=). Such a tag is completely ignored.
     EofInTag,
     /// This error occurs if the parser encounters a comment that is closed by the "--!>" code point sequence. The parser treats such comments as if they are correctly closed by the "-->" code point sequence.
     IncorrectlyClosedComment,
@@ -52,11 +53,13 @@ pub enum ParseError {
     ///
     /// This will be parsed into:
     ///
+    /// ```text
     ///     html
     ///         head
     ///         body
     ///             #text: <42>
     ///             #comment: 42
+    /// ```
     ///
     /// While the first code point of a tag name is limited to an ASCII alpha, a wide range of code points (including ASCII digits) is allowed in subsequent positions.
     InvalidFirstCharacterOfTagName,
@@ -102,12 +105,14 @@ pub enum ParseError {
     ///
     /// This will be parsed into:
     ///
+    /// ```text
     ///     html
     ///         head
     ///         body
     ///             div
     ///                 span
     ///                 span
+    /// ```
     ///
     /// The trailing U+002F (/) in a start tag name can be used only in foreign content to specify self-closing tags. (Self-closing tags don't exist in HTML.) It is also allowed for void elements, but doesn't have any effect in this case.
     NonVoidHtmlElementStartTagWithTrailingSolidus,
@@ -169,10 +174,12 @@ pub enum ParseError {
     ///
     /// This will be parsed into:
     ///
+    /// ```text
     ///     #comment: ?xml-stylesheet type="text/css" href="style.css"?
     ///     html
     ///         head
     ///         body
+    /// ```
     ///
     /// The common reason for this error is an XML processing instruction (e.g., <?xml-stylesheet type="text/css" href="style.css"?>) or an XML declaration (e.g., <?xml version="1.0" encoding="UTF-8"?>) being used in HTML.
     UnexpectedQuestionMarkInsteadOfTagName,

@@ -1,6 +1,6 @@
-use derive_more::{AsRef, Display, From};
+use derive_more::{AsRef, Deref, DerefMut, Display, From};
 
-use super::{errors, token, TransitionResult};
+use super::{errors, token, Codepoint, TransitionResult};
 
 macro_rules! create_states {
     ($($s:ident,)+) => {
@@ -104,9 +104,7 @@ create_states! {
     CdataSectionBracket,
     CdataSectionEnd,
 
-    //  CharacterReference has an intermediate state, and may hold an attribute token
     CharacterReference,
-    _CharacterReference1,
 
     NamedCharacterReference,
     AmbiguousAmpersand,
@@ -381,39 +379,61 @@ pub struct CharacterReference {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct _CharacterReference1 {
+pub struct NamedCharacterReference {
     pub(crate) return_state: Box<States>,
     pub(crate) tmp: String,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct NamedCharacterReference {}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct AmbiguousAmpersand {}
+pub struct AmbiguousAmpersand {
+    pub(crate) return_state: Box<States>,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct NumericCharacterReference {
+    pub(crate) return_state: Box<States>,
     pub(crate) tmp: String,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct HexadecimalCharacterReferenceStart {}
+pub struct HexadecimalCharacterReferenceStart {
+    pub(crate) tmp: String,
+    pub(crate) return_state: Box<States>,
+    pub(crate) character_reference_code: CharacterReferenceCode,
+}
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct DecimalCharacterReferenceStart {}
+pub struct DecimalCharacterReferenceStart {
+    pub(crate) tmp: String,
+    pub(crate) return_state: Box<States>,
+    pub(crate) character_reference_code: CharacterReferenceCode,
+}
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct HexadecimalCharacterReference {}
+pub struct HexadecimalCharacterReference {
+    pub(crate) tmp: String,
+    pub(crate) return_state: Box<States>,
+    pub(crate) character_reference_code: CharacterReferenceCode,
+}
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct DecimalCharacterReference {}
+pub struct DecimalCharacterReference {
+    pub(crate) tmp: String,
+    pub(crate) return_state: Box<States>,
+    pub(crate) character_reference_code: CharacterReferenceCode,
+}
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct NumericCharacterReferenceEnd {}
+pub struct NumericCharacterReferenceEnd {
+    pub(crate) tmp: String,
+    pub(crate) return_state: Box<States>,
+    pub(crate) character_reference_code: CharacterReferenceCode,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Term {}
+
+pub(crate) type CharacterReferenceCode = Codepoint;
 
 impl States {
     pub fn new() -> Self {
@@ -710,40 +730,76 @@ impl States {
         States::CharacterReference(CharacterReference { return_state, tmp })
     }
 
-    pub fn _character_reference1(return_state: Box<States>, tmp: String) -> States {
-        States::_CharacterReference1(_CharacterReference1 { return_state, tmp })
+    pub fn named_character_reference(return_state: Box<States>, tmp: String) -> States {
+        States::NamedCharacterReference(NamedCharacterReference { return_state, tmp })
     }
 
-    pub fn named_character_reference() -> States {
-        States::NamedCharacterReference(NamedCharacterReference {})
+    pub fn ambiguous_ampersand(return_state: Box<States>) -> States {
+        States::AmbiguousAmpersand(AmbiguousAmpersand { return_state })
     }
 
-    pub fn ambiguous_ampersand() -> States {
-        States::AmbiguousAmpersand(AmbiguousAmpersand {})
+    pub fn numeric_character_reference(return_state: Box<States>, tmp: String) -> States {
+        States::NumericCharacterReference(NumericCharacterReference { return_state, tmp })
     }
 
-    pub fn numeric_character_reference(tmp: String) -> States {
-        States::NumericCharacterReference(NumericCharacterReference { tmp })
+    pub fn hexadecimal_character_reference_start(
+        return_state: Box<States>,
+        tmp: String,
+        character_reference_code: CharacterReferenceCode,
+    ) -> States {
+        States::HexadecimalCharacterReferenceStart(HexadecimalCharacterReferenceStart {
+            return_state,
+            tmp,
+            character_reference_code,
+        })
     }
 
-    pub fn hexadecimal_character_reference_start() -> States {
-        States::HexadecimalCharacterReferenceStart(HexadecimalCharacterReferenceStart {})
+    pub fn decimal_character_reference_start(
+        return_state: Box<States>,
+        tmp: String,
+        character_reference_code: CharacterReferenceCode,
+    ) -> States {
+        States::DecimalCharacterReferenceStart(DecimalCharacterReferenceStart {
+            return_state,
+            tmp,
+            character_reference_code,
+        })
     }
 
-    pub fn decimal_character_reference_start() -> States {
-        States::DecimalCharacterReferenceStart(DecimalCharacterReferenceStart {})
+    pub fn hexadecimal_character_reference(
+        return_state: Box<States>,
+        tmp: String,
+        character_reference_code: CharacterReferenceCode,
+    ) -> States {
+        States::HexadecimalCharacterReference(HexadecimalCharacterReference {
+            return_state,
+            tmp,
+            character_reference_code,
+        })
     }
 
-    pub fn hexadecimal_character_reference() -> States {
-        States::HexadecimalCharacterReference(HexadecimalCharacterReference {})
+    pub fn decimal_character_reference(
+        return_state: Box<States>,
+        tmp: String,
+        character_reference_code: CharacterReferenceCode,
+    ) -> States {
+        States::DecimalCharacterReference(DecimalCharacterReference {
+            tmp,
+            return_state,
+            character_reference_code,
+        })
     }
 
-    pub fn decimal_character_reference() -> States {
-        States::DecimalCharacterReference(DecimalCharacterReference {})
-    }
-
-    pub fn numeric_character_reference_end() -> States {
-        States::NumericCharacterReferenceEnd(NumericCharacterReferenceEnd {})
+    pub fn numeric_character_reference_end(
+        return_state: Box<States>,
+        tmp: String,
+        character_reference_code: CharacterReferenceCode,
+    ) -> States {
+        States::NumericCharacterReferenceEnd(NumericCharacterReferenceEnd {
+            tmp,
+            return_state,
+            character_reference_code,
+        })
     }
 
     pub fn term() -> States {
@@ -789,14 +845,14 @@ impl States {
             // ScriptDataDoubleEscapeEnd(state) => state.on_character(input),
             BeforeAttributeName(state) => state.on_character(input),
             AttributeName(state) => state.on_character(input),
-            // AfterAttributeName(state) => state.on_character(input),
+            AfterAttributeName(state) => state.on_character(input),
             BeforeAttributeValue(state) => state.on_character(input),
             AttributeValueDoubleQuoted(state) => state.on_character(input),
             AttributeValueSingleQuoted(state) => state.on_character(input),
             AttributeValueUnquoted(state) => state.on_character(input),
             AfterAttributeValueQuoted(state) => state.on_character(input),
-            // SelfClosingStartTag(state) => state.on_character(input),
-            // BogusComment(state) => state.on_character(input),
+            SelfClosingStartTag(state) => state.on_character(input),
+            BogusComment(state) => state.on_character(input),
             // MarkupDeclarationOpen(state) => state.on_character(input),
             CommentStart(state) => state.on_character(input),
             // CommentStartDash(state) => state.on_character(input),
@@ -828,16 +884,22 @@ impl States {
             // CdataSectionBracket(state) => state.on_character(input),
             // CdataSectionEnd(state) => state.on_character(input),
             CharacterReference(state) => state.on_character(input),
-            _CharacterReference1(state) => state.on_character(input),
-            NamedCharacterReference(state) => state.on_character(input),
-            // AmbiguousAmpersand(state) => state.on_character(input),
-            // NumericCharacterReference(state) => state.on_character(input),
-            // HexadecimalCharacterReferenceStart(state) => state.on_character(input),
-            // DecimalCharacterReferenceStart(state) => state.on_character(input),
-            // HexadecimalCharacterReference(state) => state.on_character(input),
-            // DecimalCharacterReference(state) => state.on_character(input),
-            NumericCharacterReferenceEnd(state) => state.on_character(input),
+            // NamedCharacterReference(state) => state.on_character(input),
+            AmbiguousAmpersand(state) => state.on_character(input),
+            NumericCharacterReference(state) => state.on_character(input),
+            HexadecimalCharacterReferenceStart(state) => state.on_character(input),
+            DecimalCharacterReferenceStart(state) => state.on_character(input),
+            HexadecimalCharacterReference(state) => state.on_character(input),
+            DecimalCharacterReference(state) => state.on_character(input),
+            // NumericCharacterReferenceEnd(state) => state.on_character(input),
             _ => Err(errors::StateTransitionError::new(self, "Character")).into(),
+        }
+    }
+
+    pub fn on_advance(self) -> TransitionResult {
+        match self {
+            States::NumericCharacterReferenceEnd(state) => state.on_advance(),
+            _ => Err(errors::StateTransitionError::new(self, "Advance")).into(),
         }
     }
 
@@ -848,11 +910,31 @@ impl States {
         }
     }
 
+    pub fn on_possible_character_reference_with_next_char(
+        self,
+        input: PossibleCharacterReferenceWithNextChar,
+    ) -> TransitionResult {
+        match self {
+            States::NamedCharacterReference(state) => {
+                state.on_possible_character_reference_with_next_char(input)
+            }
+            _ => Err(errors::StateTransitionError::new(
+                self,
+                "PossibleCharacterReference",
+            ))
+            .into(),
+        }
+    }
+
     pub fn execute(self, input: StateMachineMessages) -> TransitionResult {
         use StateMachineMessages::*;
 
         match input {
+            Advance => self.on_advance(),
             NextFewCharacters(message) => self.on_next_few_characters(message),
+            PossibleCharacterReferenceWithNextChar(message) => {
+                self.on_possible_character_reference_with_next_char(message)
+            }
             Character(message) => self.on_character(message),
         }
     }
@@ -868,13 +950,15 @@ impl Default for States {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, From)]
 pub enum StateMachineMessages {
+    Advance,
     NextFewCharacters(NextFewCharacters),
+    PossibleCharacterReferenceWithNextChar(PossibleCharacterReferenceWithNextChar),
     Character(Character),
 }
 
-#[derive(Clone, Debug, PartialEq, From)]
+#[derive(Clone, Copy, Debug, PartialEq, From)]
 pub enum Character {
     Char(char),
     LineFeed,
@@ -883,5 +967,9 @@ pub enum Character {
 }
 
 // Is this just needed for MarkupDeclarationOpen?
-#[derive(Clone, Debug, PartialEq, From, AsRef)]
+#[derive(Clone, Debug, PartialEq, From, AsRef, Deref, DerefMut)]
 pub struct NextFewCharacters(Option<String>);
+
+// Is this just needed for NamedCharacterReference?
+#[derive(Clone, Debug, PartialEq, From, AsRef)]
+pub struct PossibleCharacterReferenceWithNextChar(pub Option<String>, pub Character);

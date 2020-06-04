@@ -14,8 +14,15 @@ macro_rules! testdata_tests {
 }
 
 testdata_tests! {
+    charref
+    google
+    serenity_welcome
     simple0
     simple1
-    serenity_welcome
+    simple2
+    simple3
+    simple4
+    simple5
+    simple6
     twitter
 }

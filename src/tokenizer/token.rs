@@ -151,6 +151,14 @@ impl Token {
             _ => panic!("Cannot set_force_quirks on {:?}", self),
         }
     }
+
+    pub(crate) fn set_self_closing(&mut self, f: SelfClosingFlag) {
+        match self {
+            Token::StartTag(t) => t.set_self_closing(f),
+            Token::EndTag(t) => t.set_self_closing(f),
+            _ => panic!("Cannot set_self_closing on {:?}", self),
+        }
+    }
 }
 
 impl Doctype {
@@ -205,6 +213,10 @@ impl StartTag {
     pub(crate) fn current_attribute_mut(&mut self) -> Option<&mut Attribute> {
         self.attributes.last_mut()
     }
+
+    pub(crate) fn set_self_closing(&mut self, f: SelfClosingFlag) {
+        self.self_closing = f
+    }
 }
 
 impl EndTag {
@@ -244,6 +256,10 @@ impl EndTag {
     pub(crate) fn is_appropriate_end_tag(&self) -> bool {
         // TODO
         true
+    }
+
+    pub(crate) fn set_self_closing(&mut self, f: SelfClosingFlag) {
+        self.self_closing = f
     }
 }
 
