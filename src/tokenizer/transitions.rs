@@ -1,10 +1,12 @@
-use log::{debug, trace};
+use log::trace;
 
 use super::{codepoint, errors::ParseError, get_entities, states::*, token, TransitionResult};
 
 /*
  * Transition Impls
  */
+
+// TODO: unwraps
 
 impl Data {
     pub fn on_character(self, c: Character) -> TransitionResult {
@@ -131,7 +133,6 @@ impl TagName {
                 ret
             }
             Character::Char(c) if c.is_ascii_uppercase() => {
-                // TODO: unwrap
                 self.token.push(c.to_lowercase().next().unwrap());
                 States::tag_name(self.token).into()
             }
@@ -880,18 +881,36 @@ impl DoctypeName {
 
 impl CharacterReference {
     pub fn on_character(mut self, c: Character) -> TransitionResult {
+        self.tmp = String::new();
         self.tmp.push('&');
         match c {
             Character::Char(a) if a.is_alphanumeric() => {
-                States::named_character_reference(self.return_state, self.tmp)
-                    .into_transition_result()
+                // Reconsume in the named character reference state.
+                let mut ret = States::named_character_reference(self.return_state, self.tmp)
+                    .into_transition_result();
+                ret.set_reconsume();
+                ret
             }
             Character::Char('#') => {
                 self.tmp.push('#');
                 States::numeric_character_reference(self.return_state, self.tmp)
                     .into_transition_result()
             }
-            _ => self.flush_codepoints_consumed_as_character_reference_reconsume_on_return_state(c),
+            _ => {
+                // TODO: ownership...
+                let tmp = self.tmp.clone();
+                let to_emit = flush_codepoints_consumed_as_character_reference(
+                    self.get_attribute_token(),
+                    &tmp,
+                );
+
+                let mut ret = self.return_state.into_transition_result();
+                for emit in to_emit {
+                    ret.push_emit(emit);
+                }
+                ret.set_reconsume();
+                ret
+            }
         }
     }
 
@@ -906,37 +925,6 @@ impl CharacterReference {
             States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
         }
-    }
-
-    fn flush_codepoints_consumed_as_character_reference_reconsume_on_return_state(
-        mut self,
-        c: Character,
-    ) -> TransitionResult {
-        trace!("CharacterReference::flush_codepoints_consumed_as_character_reference_reconsume_on_return_state");
-        let mut to_emit = Vec::new();
-        let chars = self.tmp.chars().collect::<Vec<_>>();
-
-        if let Some(token) = self.get_attribute_token() {
-            let attribute = token.current_attribute_mut().unwrap();
-            for c in chars {
-                attribute.push_value(c);
-            }
-        } else {
-            for c in chars {
-                to_emit.insert(0, token::Token::Character(c));
-            }
-        }
-
-        let reconsume_state: Box<States> = self.return_state;
-        debug!("Reconsume on Return State: {:?}", reconsume_state);
-        let mut ret = reconsume_state.on_character(c);
-
-        // Pop off items and prepend them to the emit queue
-        while let Some(emit) = to_emit.pop() {
-            ret.insert_emit(0, emit);
-        }
-
-        ret
     }
 }
 
@@ -947,7 +935,7 @@ impl NamedCharacterReference {
     ) -> TransitionResult {
         let PossibleCharacterReferenceWithNextChar(possible_char_ref, next_c) = input;
 
-        let next_c_equals_or_alpha = match next_c {
+        let next_char_equals_or_alpha = match next_c {
             Character::Char('=') => true,
             Character::Char(ch) if ch.is_alphanumeric() => true,
             _ => false,
@@ -955,29 +943,77 @@ impl NamedCharacterReference {
 
         // There was a match
         if let Some(char_ref) = possible_char_ref {
+            // If the character reference was consumed as part of an attribute,
+            // and the last character matched is not a U+003B SEMICOLON character (;),
+            // and the next input character is either a U+003D EQUALS SIGN character
+            // (=) or an ASCII alphanumeric, then, for historical reasons,
+            // flush code points consumed as a character reference and switch to the return state.
+            let was_consumed_as_part_of_attribute = self.get_attribute_token().is_some();
             let last_char_is_semicolon = char_ref.ends_with(';');
-            let historical = self.get_attribute_token().is_some()
+            let historical = was_consumed_as_part_of_attribute
                 && last_char_is_semicolon
-                && next_c_equals_or_alpha;
-            if historical {
-                trace!("Skipping char named character lookup for historical reasons");
-            } else {
-                self.tmp = String::new();
-                self.tmp = get_entities()
-                    .get(char_ref.as_str())
-                    .unwrap()
-                    .characters
-                    .clone();
-            }
+                && next_char_equals_or_alpha;
 
-            let mut ret =
-                self.flush_codepoints_consumed_as_character_reference_switch_to_return_state();
-            if !historical && !last_char_is_semicolon {
-                ret.push_parse_error(ParseError::MissingSemicolonAfterCharacterReference);
+            if historical {
+                // flush code points consumed as a character reference and switch to the return state.
+                trace!("Skipping char named character lookup for historical reasons");
+
+                // TODO: ownership...
+                let tmp = self.tmp.clone();
+                let to_emit = flush_codepoints_consumed_as_character_reference(
+                    self.get_attribute_token(),
+                    &tmp,
+                );
+
+                let mut ret = self.return_state.into_transition_result();
+                for emit in to_emit {
+                    ret.push_emit(emit);
+                }
+                ret
+            } else {
+                // 1. If the last character matched is not a U+003B SEMICOLON character (;),
+                //    then this is a missing-semicolon-after-character-reference parse error.
+                // 2. Set the temporary buffer to the empty string.
+                //    Append one or two characters corresponding to the character reference name
+                //    (as given by the second column of the named character references table) to the temporary buffer.
+                // 3. Flush code points consumed as a character reference. Switch to the return state.
+                self.tmp = String::new();
+                self.tmp.push_str(
+                    get_entities()
+                        .get(char_ref.as_str())
+                        .unwrap()
+                        .characters
+                        .as_str(),
+                );
+                // TODO: ownership...
+                let tmp = self.tmp.clone();
+                let to_emit = flush_codepoints_consumed_as_character_reference(
+                    self.get_attribute_token(),
+                    &tmp,
+                );
+
+                let mut ret = self.return_state.into_transition_result();
+
+                if !last_char_is_semicolon {
+                    ret.push_parse_error(ParseError::MissingSemicolonAfterCharacterReference);
+                }
+                for emit in to_emit {
+                    ret.push_emit(emit);
+                }
+                ret
+            }
+        } else {
+            // Flush code points consumed as a character reference. Switch to the ambiguous ampersand state.
+            // TODO: ownership...
+            let tmp = self.tmp.clone();
+            let to_emit =
+                flush_codepoints_consumed_as_character_reference(self.get_attribute_token(), &tmp);
+
+            let mut ret = States::ambiguous_ampersand(self.return_state).into_transition_result();
+            for emit in to_emit {
+                ret.push_emit(emit);
             }
             ret
-        } else {
-            self.flush_codepoints_consumed_as_character_reference_ambiguous_ampersand()
         }
     }
 
@@ -991,56 +1027,6 @@ impl NamedCharacterReference {
             }
             States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
-        }
-    }
-
-    fn flush_codepoints_consumed_as_character_reference_switch_to_return_state(
-        mut self,
-    ) -> TransitionResult {
-        trace!("NamedCharacterReference::flush_codepoints_consumed_as_character_reference_switch_to_return_state({:?})", &self);
-        let mut to_emit = Vec::new();
-        let chars = self.tmp.chars().collect::<Vec<_>>();
-
-        if let Some(token) = self.get_attribute_token() {
-            let attribute = token.current_attribute_mut().unwrap();
-            for c in chars {
-                attribute.push_value(c);
-            }
-        } else {
-            for c in chars {
-                to_emit.insert(0, token::Token::Character(c));
-            }
-        }
-
-        let mut ret = self.return_state.into_transition_result();
-
-        // Pop off items and prepend them to the emit queue
-        while let Some(emit) = to_emit.pop() {
-            ret.insert_emit(0, emit);
-        }
-
-        ret
-    }
-
-    fn flush_codepoints_consumed_as_character_reference_ambiguous_ampersand(
-        mut self,
-    ) -> TransitionResult {
-        trace!("NamedCharacterReference::flush_codepoints_consumed_as_character_reference_ambiguous_ampersand");
-        // let mut to_emit = Vec::new();
-        let chars = self.tmp.chars().collect::<Vec<_>>();
-
-        if let Some(token) = self.get_attribute_token() {
-            let attribute = token.current_attribute_mut().unwrap();
-            for c in chars {
-                attribute.push_value(c);
-            }
-            States::ambiguous_ampersand(self.return_state).into_transition_result()
-        } else {
-            let mut ret = States::ambiguous_ampersand(self.return_state).into_transition_result();
-            for c in chars {
-                ret.push_emit(token::Token::Character(c));
-            }
-            ret
         }
     }
 }
@@ -1117,7 +1103,7 @@ impl NumericCharacterReference {
 }
 
 impl HexadecimalCharacterReferenceStart {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char(ch) if ch.is_ascii_hexdigit() => {
                 let mut ret = States::hexadecimal_character_reference(
@@ -1130,9 +1116,19 @@ impl HexadecimalCharacterReferenceStart {
                 ret
             }
             _ => {
-                let mut ret = self
-                    .flush_codepoints_consumed_as_character_reference_reconsume_on_return_state(c);
-                ret.insert_parse_error(0, ParseError::AbsenceOfDigitsInNumericCharacterReference);
+                // TODO: ownership...
+                let tmp = self.tmp.clone();
+                let to_emit = flush_codepoints_consumed_as_character_reference(
+                    self.get_attribute_token(),
+                    &tmp,
+                );
+
+                let mut ret = self.return_state.into_transition_result();
+                for emit in to_emit {
+                    ret.push_emit(emit);
+                }
+                ret.push_parse_error(ParseError::AbsenceOfDigitsInNumericCharacterReference);
+                ret.set_reconsume();
                 ret
             }
         }
@@ -1150,41 +1146,10 @@ impl HexadecimalCharacterReferenceStart {
             _ => None,
         }
     }
-
-    fn flush_codepoints_consumed_as_character_reference_reconsume_on_return_state(
-        mut self,
-        c: Character,
-    ) -> TransitionResult {
-        trace!("DecimalCharacterReferenceStart::flush_codepoints_consumed_as_character_reference_reconsume_on_return_state");
-        let mut to_emit = Vec::new();
-        let chars = self.tmp.chars().collect::<Vec<_>>();
-
-        if let Some(token) = self.get_attribute_token() {
-            let attribute = token.current_attribute_mut().unwrap();
-            for c in chars {
-                attribute.push_value(c);
-            }
-        } else {
-            for c in chars {
-                to_emit.insert(0, token::Token::Character(c));
-            }
-        }
-
-        let reconsume_state: Box<States> = self.return_state;
-        debug!("Reconsume on Return State: {:?}", reconsume_state);
-        let mut ret = reconsume_state.on_character(c);
-
-        // Pop off items and prepend them to the emit queue
-        while let Some(emit) = to_emit.pop() {
-            ret.insert_emit(0, emit);
-        }
-
-        ret
-    }
 }
 
 impl DecimalCharacterReferenceStart {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char(ch) if ch.is_ascii_digit() => {
                 let mut ret = States::decimal_character_reference(
@@ -1197,9 +1162,19 @@ impl DecimalCharacterReferenceStart {
                 ret
             }
             _ => {
-                let mut ret = self
-                    .flush_codepoints_consumed_as_character_reference_reconsume_on_return_state(c);
+                // TODO: ownership...
+                let tmp = self.tmp.clone();
+                let to_emit = flush_codepoints_consumed_as_character_reference(
+                    self.get_attribute_token(),
+                    &tmp,
+                );
+
+                let mut ret = self.return_state.into_transition_result();
+                for emit in to_emit {
+                    ret.push_emit(emit);
+                }
                 ret.insert_parse_error(0, ParseError::AbsenceOfDigitsInNumericCharacterReference);
+                ret.set_reconsume();
                 ret
             }
         }
@@ -1216,37 +1191,6 @@ impl DecimalCharacterReferenceStart {
             States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
         }
-    }
-
-    fn flush_codepoints_consumed_as_character_reference_reconsume_on_return_state(
-        mut self,
-        c: Character,
-    ) -> TransitionResult {
-        trace!("DecimalCharacterReferenceStart::flush_codepoints_consumed_as_character_reference_reconsume_on_return_state");
-        let mut to_emit = Vec::new();
-        let chars = self.tmp.chars().collect::<Vec<_>>();
-
-        if let Some(token) = self.get_attribute_token() {
-            let attribute = token.current_attribute_mut().unwrap();
-            for c in chars {
-                attribute.push_value(c);
-            }
-        } else {
-            for c in chars {
-                to_emit.insert(0, token::Token::Character(c));
-            }
-        }
-
-        let reconsume_state: Box<States> = self.return_state;
-        debug!("Reconsume on Return State: {:?}", reconsume_state);
-        let mut ret = reconsume_state.on_character(c);
-
-        // Pop off items and prepend them to the emit queue
-        while let Some(emit) = to_emit.pop() {
-            ret.insert_emit(0, emit);
-        }
-
-        ret
     }
 }
 
@@ -1370,8 +1314,16 @@ impl NumericCharacterReferenceEnd {
         self.tmp
             .push(std::char::from_u32(character_reference_code).unwrap());
 
-        let mut ret =
-            self.flush_codepoints_consumed_as_character_reference_switch_to_return_state();
+        // TODO: ownership...
+        let tmp = self.tmp.clone();
+        let to_emit =
+            flush_codepoints_consumed_as_character_reference(self.get_attribute_token(), &tmp);
+
+        let mut ret = self.return_state.into_transition_result();
+        // TODO: ordering?
+        for emit in to_emit {
+            ret.push_emit(emit);
+        }
         if let Some(parse_err) = parse_err {
             ret.push_parse_error(parse_err);
         }
@@ -1390,34 +1342,6 @@ impl NumericCharacterReferenceEnd {
             States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
         }
-    }
-
-    fn flush_codepoints_consumed_as_character_reference_switch_to_return_state(
-        mut self,
-    ) -> TransitionResult {
-        trace!("NumericCharacterReferenceEnd::flush_codepoints_consumed_as_character_reference_switch_to_return_state");
-        let mut to_emit = Vec::new();
-        let chars = self.tmp.chars().collect::<Vec<_>>();
-
-        if let Some(token) = self.get_attribute_token() {
-            let attribute = token.current_attribute_mut().unwrap();
-            for c in chars {
-                attribute.push_value(c);
-            }
-        } else {
-            for c in chars {
-                to_emit.insert(0, token::Token::Character(c));
-            }
-        }
-
-        let mut ret = self.return_state.into_transition_result();
-
-        // Pop off items and prepend them to the emit queue
-        while let Some(emit) = to_emit.pop() {
-            ret.insert_emit(0, emit);
-        }
-
-        ret
     }
 
     fn translate(c: CharacterReferenceCode) -> Option<CharacterReferenceCode> {
@@ -1480,4 +1404,32 @@ impl NumericCharacterReferenceEnd {
             _ => None,
         }
     }
+}
+
+/*
+ * Transition Helpers
+ */
+
+fn flush_codepoints_consumed_as_character_reference(
+    attribute_token: Option<&mut token::Token>,
+    tmp: &str,
+) -> Vec<token::Token> {
+    trace!(
+        "flush_codepoints_consumed_as_character_reference(tmp: {:?})",
+        tmp
+    );
+    let mut to_emit = Vec::new();
+    let chars = tmp.chars().collect::<Vec<_>>();
+
+    if let Some(token) = attribute_token {
+        let attribute = token.current_attribute_mut().unwrap();
+        for c in chars {
+            attribute.push_value(c);
+        }
+    } else {
+        for c in chars {
+            to_emit.push(token::Token::Character(c));
+        }
+    }
+    to_emit
 }

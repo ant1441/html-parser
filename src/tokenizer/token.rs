@@ -172,7 +172,7 @@ impl fmt::Display for Token {
             EndTag(t) => write!(f, "{}", t),
             Comment(t) => write!(f, "Comment({})", t),
             Characters(t) => write!(f, "Characters({:?})", t),
-            Character(t) => write!(f, "Character({})", t),
+            Character(t) => write!(f, "Character({:?})", t),
             Eof => write!(f, "Token(EOF)"),
         }
     }

@@ -1,5 +1,8 @@
 use std::io::{self, BufReader, Read, Seek, SeekFrom};
-use std::{cell::Cell, str};
+use std::{
+    cell::{Cell, RefCell},
+    str,
+};
 
 // use derive_more::{AsRef, From};
 use log::{debug, trace};
@@ -29,25 +32,35 @@ where
     R: io::Read + io::Seek,
 {
     reader: BufReader<R>,
+    collapse_chars: bool,
+
+    // TODO: Cell?
     state: Option<States>,
+    reconsume: bool,
+    last_char: Option<Character>,
 
     // We collapse multiple Token::Character into Token::Characters
     characters_emit_cache: Cell<Option<Token>>,
+    token_emit_cache: RefCell<Vec<Token>>,
 }
 
 impl<R> Tokenizer<R>
 where
     R: io::Read + io::Seek,
 {
-    pub fn new(data: R) -> Self {
+    pub fn new(data: R, collapse_chars: bool) -> Self {
         Tokenizer {
             // TODO, we assume this is UTF-8
             // To be standard compliant we should use the
             // [encoding sniffing algorithm](https://html.spec.whatwg.org/multipage/parsing.html#encoding-sniffing-algorithm)
             reader: BufReader::new(data),
+            collapse_chars,
             state: Some(States::new()),
+            reconsume: false,
+            last_char: None,
 
             characters_emit_cache: Cell::new(None),
+            token_emit_cache: RefCell::new(Vec::new()),
         }
     }
 
@@ -181,22 +194,79 @@ where
 
     pub fn run(&mut self) {
         // IDEAS:
-        // * Reconsume via a flag on TransitionResult
-        //   ```
-        //   if res.reconsume: goto just after self.next_character
         //
         // TODO:
         // '<' in Script tag...
         // StartTag(StartTag { name: "t.length;r++)console.log(\"actionqueue\",c(t[r]))}function&&&&&&&&&&&&&&&",
-        let mut state = self.state.take().unwrap();
 
-        let mut c = self.next_character().unwrap();
-        // we set reconsume to true as we've already read the initial char
-        let mut reconsume = true;
+        for token in self {
+            println!("[EMIT]: {}", token);
+        }
+    }
+
+    pub fn handle_transition_result(&mut self, mut res: TransitionResult) -> Option<token::Token> {
+        for token in res.emits() {
+            if self.collapse_chars {
+                if !token.is_character() {
+                    if let Some(cached_token) = self.characters_emit_cache.take() {
+                        self.token_emit_cache.borrow_mut().push(cached_token);
+                    }
+                    self.token_emit_cache.borrow_mut().push(token);
+                } else if let Some(mut cached_token) = self.characters_emit_cache.take() {
+                    // Take the cached_token, and add the current char to it
+                    cached_token.push_token(token.to_owned());
+                    self.characters_emit_cache.set(Some(cached_token));
+                } else {
+                    // Make a new Token::Characters, from the current char
+                    let mut cached_token = Token::Characters(String::new());
+                    cached_token.push_token(token.to_owned());
+                    self.characters_emit_cache.set(Some(cached_token));
+                }
+            } else {
+                self.token_emit_cache.borrow_mut().push(token);
+            }
+        }
+
+        if res.is_err() {
+            let next_state_error = res.state().unwrap_err();
+            // TODO return err?
+            panic!("Tokenizer error: {}", next_state_error);
+        }
+
+        self.reconsume = res.reconsume();
+        self.state = Some(res.state().unwrap());
+
+        if self.token_emit_cache.borrow().is_empty() {
+            None
+        } else {
+            let mut token_emit_cache = self.token_emit_cache.borrow_mut();
+            Some(token_emit_cache.remove(0))
+        }
+    }
+}
+
+impl<R> std::iter::Iterator for Tokenizer<R>
+where
+    R: io::Read + io::Seek,
+{
+    type Item = token::Token;
+
+    #[allow(unreachable_code, unused_variables, unused_assignments)]
+    fn next(&mut self) -> Option<Self::Item> {
         loop {
-            trace!("State ({}): {:?}", if reconsume { "R" } else { "-" }, state);
+            if !self.token_emit_cache.borrow().is_empty() {
+                let mut token_emit_cache = self.token_emit_cache.borrow_mut();
+                return Some(token_emit_cache.remove(0));
+            }
+
+            let state = self.state.take().unwrap();
+            trace!(
+                "State ({}): {:?}",
+                if self.reconsume { "R" } else { "-" },
+                state
+            );
             let res = match state {
-                States::Term(_) => return,
+                States::Term(_) => return None,
                 States::MarkupDeclarationOpen(ref m) => {
                     if self.next_few_characters_are("--", false) {
                         state.on_next_few_characters(Some("--".to_string()).into())
@@ -212,8 +282,9 @@ where
                     mut tmp,
                     return_state,
                 }) => {
-                    let possible_char_ref =
-                        self.find_named_character_reference(c, &mut tmp).unwrap();
+                    let possible_char_ref = self
+                        .find_named_character_reference(self.last_char.unwrap(), &mut tmp)
+                        .unwrap();
                     let reconstructed_state =
                         States::NamedCharacterReference(NamedCharacterReference {
                             tmp,
@@ -227,55 +298,18 @@ where
 
                 States::NumericCharacterReferenceEnd(_) => state.on_advance(),
                 _ => {
-                    if !reconsume {
-                        // TODO: Tokenizer internal state
-                        c = self.next_character().unwrap();
-                    }
+                    let c = if !self.reconsume {
+                        self.next_character().unwrap()
+                    } else {
+                        self.last_char.unwrap()
+                    };
+                    self.last_char = Some(c);
                     state.on_character(c)
                 }
             };
-            let ret = self.handle_transition_result(res);
-            // TODO: Tokenizer internal state
-            state = ret.0;
-            // TODO: Tokenizer internal state
-            reconsume = ret.1;
-        }
-    }
-
-    pub fn handle_transition_result(&self, mut res: TransitionResult) -> (States, bool) {
-        for token in res.emits() {
-            if USE_EMIT_CACHE {
-                if !token.is_character() {
-                    if let Some(cached_token) = self.characters_emit_cache.take() {
-                        self.emit(&cached_token);
-                    }
-                    self.emit(&token)
-                } else if let Some(mut cached_token) = self.characters_emit_cache.take() {
-                    // Take the cached_token, and add the current char to it
-                    cached_token.push_token(token);
-                    self.characters_emit_cache.set(Some(cached_token));
-                } else {
-                    // Make a new Token::Characters, from the current char
-                    let mut cached_token = Token::Characters(String::new());
-                    cached_token.push_token(token);
-                    self.characters_emit_cache.set(Some(cached_token));
-                }
-            } else {
-                self.emit(&token)
+            if let Some(token) = self.handle_transition_result(res) {
+                return Some(token);
             }
         }
-
-        if res.is_err() {
-            let next_state_error = res.state().unwrap_err();
-            panic!("Tokenizer error: {}", next_state_error);
-        }
-        let reconsume = res.reconsume();
-        let next_state = res.state().unwrap();
-        debug!("Next State: {:?}", next_state);
-        (next_state, reconsume)
-    }
-
-    pub fn emit(&self, token: &Token) {
-        println!("[EMIT]: {}", token);
     }
 }

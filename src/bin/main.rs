@@ -8,7 +8,7 @@ fn main() -> io::Result<()> {
     let input = env::args().nth(1).unwrap();
     let mut f = fs::File::open(input)?;
 
-    let mut tokenizer = html_parser::Tokenizer::new(&mut f);
+    let mut tokenizer = html_parser::Tokenizer::new(&mut f, true);
     tokenizer.run();
     Ok(())
 }
