@@ -51,16 +51,14 @@ impl TagOpen {
                 let token = token::StartTag {
                     ..Default::default()
                 };
-                let reconsume_state = States::tag_name(token.into());
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::tag_name(token.into()).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
             Character::Char('?') => {
-                let reconsume_state = States::bogus_comment(String::new().into());
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
-
-                ret.insert_parse_error(0, ParseError::UnexpectedQuestionMarkInsteadOfTagName);
+                let mut ret = States::bogus_comment(String::new().into()).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedQuestionMarkInsteadOfTagName);
+                ret.set_reconsume();
                 ret
             }
             Character::Eof => {
@@ -71,12 +69,10 @@ impl TagOpen {
                 ret
             }
             _ => {
-                let reconsume_state = States::data();
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
-
-                ret.insert_emit(0, token::Token::Character('\u{003C}'));
-                ret.insert_parse_error(0, ParseError::InvalidFirstCharacterOfTagName);
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(token::Token::Character('\u{003C}'));
+                ret.push_parse_error(ParseError::InvalidFirstCharacterOfTagName);
+                ret.set_reconsume();
                 ret
             }
         }
@@ -90,9 +86,9 @@ impl EndTagOpen {
                 let token = token::EndTag {
                     ..Default::default()
                 };
-                let reconsume_state = States::tag_name(token.into());
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::tag_name(token.into()).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
             Character::Char('>') => {
                 let mut ret = States::data().into_transition_result();
@@ -108,11 +104,9 @@ impl EndTagOpen {
                 ret
             }
             _ => {
-                let reconsume_state = States::bogus_comment(String::new().into());
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
-
-                ret.insert_parse_error(0, ParseError::InvalidFirstCharacterOfTagName);
+                let mut ret = States::bogus_comment(String::new().into()).into_transition_result();
+                ret.push_parse_error(ParseError::InvalidFirstCharacterOfTagName);
+                ret.set_reconsume();
                 ret
             }
         }
@@ -192,15 +186,13 @@ impl RcDataEndTagName {
                 States::rc_data_end_tag_name(self.token, self.tmp).into()
             }
             _ => {
-                let reconsume_state = States::rc_data();
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
-
-                ret.insert_emit(0, token::Token::Character('\u{003C}'));
-                ret.insert_emit(1, token::Token::Character('\u{002F}'));
-                for (i, c) in self.tmp.chars().enumerate() {
-                    ret.insert_emit(i + 2, token::Token::Character(c));
+                let mut ret = States::rc_data().into_transition_result();
+                ret.push_emit(token::Token::Character('\u{003C}'));
+                ret.push_emit(token::Token::Character('\u{002F}'));
+                for c in self.tmp.chars() {
+                    ret.push_emit(token::Token::Character(c));
                 }
+                ret.set_reconsume();
 
                 ret
             }
@@ -216,9 +208,9 @@ impl BeforeAttributeName {
             | Character::Char('\n')
             | Character::Char(' ') => States::before_attribute_name(self.token).into(),
             Character::Char('/') | Character::Char('>') | Character::Eof => {
-                let reconsume_state = States::after_attribute_name(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::after_attribute_name(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
             Character::Char('=') => {
                 self.token.add_attribute("=".to_string(), String::new());
@@ -228,9 +220,9 @@ impl BeforeAttributeName {
             }
             _ => {
                 self.token.add_attribute(String::new(), String::new());
-                let reconsume_state = States::attribute_name(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::attribute_name(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
         }
     }
@@ -247,9 +239,9 @@ impl AttributeName {
             | Character::Char('>')
             | Character::Eof => {
                 self.check_duplicate_attribuite();
-                let reconsume_state = States::after_attribute_name(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::after_attribute_name(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
             Character::Char('=') => {
                 self.check_duplicate_attribuite();
@@ -336,9 +328,9 @@ impl AfterAttributeName {
             }
             _ => {
                 self.token.add_attribute(String::new(), String::new());
-                let reconsume_state = States::attribute_name(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::attribute_name(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
         }
     }
@@ -360,9 +352,9 @@ impl BeforeAttributeValue {
                 ret
             }
             _ => {
-                let reconsume_state = States::attribute_value_unquoted(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::attribute_value_unquoted(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
         }
     }
@@ -514,11 +506,9 @@ impl AfterAttributeValueQuoted {
                 ret
             }
             _ => {
-                let reconsume_state = States::before_attribute_name(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
-
-                ret.insert_parse_error(0, ParseError::MissingWhitespaceBetweenAttributes);
+                let mut ret = States::before_attribute_name(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::MissingWhitespaceBetweenAttributes);
+                ret.set_reconsume();
                 ret
             }
         }
@@ -542,11 +532,9 @@ impl SelfClosingStartTag {
                 ret
             }
             _ => {
-                let reconsume_state = States::before_attribute_name(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
-
-                ret.insert_parse_error(0, ParseError::UnexpectedSolidusInTag);
+                let mut ret = States::before_attribute_name(self.token).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedSolidusInTag);
+                ret.set_reconsume();
                 ret
             }
         }
@@ -631,9 +619,9 @@ impl CommentStart {
                 ret
             }
             _ => {
-                let reconsume_state = States::comment(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::comment(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
         }
     }
@@ -659,9 +647,9 @@ impl CommentStartDash {
             _ => {
                 self.token.push('-');
 
-                let reconsume_state = States::comment(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::comment(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
         }
     }
@@ -715,9 +703,9 @@ impl CommentEndDash {
             _ => {
                 self.token.push('-');
 
-                let reconsume_state = States::comment(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::comment(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
         }
     }
@@ -747,9 +735,9 @@ impl CommentEnd {
                 self.token.push('-');
                 self.token.push('-');
 
-                let reconsume_state = States::comment(self.token);
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::comment(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
             }
         }
     }
@@ -763,9 +751,9 @@ impl Doctype {
             | Character::Char('\n')
             | Character::Char(' ') => States::before_doctype_name().into(),
             Character::Char('>') => {
-                let reconsume_state = States::before_doctype_name();
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = States::before_doctype_name().into_transition_result();
+                ret.set_reconsume();
+                ret
             }
             Character::Eof => {
                 let token = token::Doctype {
@@ -781,11 +769,9 @@ impl Doctype {
                 ret
             }
             _ => {
-                let reconsume_state = States::before_doctype_name();
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
-
-                ret.insert_parse_error(0, ParseError::MissingWhitespaceBeforeDoctypeName);
+                let mut ret = States::before_doctype_name().into_transition_result();
+                ret.push_parse_error(ParseError::MissingWhitespaceBeforeDoctypeName);
+                ret.set_reconsume();
                 ret
             }
         }
@@ -897,8 +883,6 @@ impl CharacterReference {
         self.tmp.push('&');
         match c {
             Character::Char(a) if a.is_alphanumeric() => {
-                // Technically a reconsume, but we special case NamedCharacterReference
-                debug!("Reconsume on State (special case): NamedCharacterReference");
                 States::named_character_reference(self.return_state, self.tmp)
                     .into_transition_result()
             }
@@ -1078,16 +1062,15 @@ impl AmbiguousAmpersand {
                 }
             }
             Character::Char(';') => {
-                let reconsume_state: Box<States> = self.return_state;
-                debug!("Reconsume on Return State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
-                ret.insert_parse_error(0, ParseError::UnknownNamedCharacterReference);
+                let mut ret = self.return_state.into_transition_result();
+                ret.push_parse_error(ParseError::UnknownNamedCharacterReference);
+                ret.set_reconsume();
                 ret
             }
             _ => {
-                let reconsume_state: Box<States> = self.return_state;
-                debug!("Reconsume on Return State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                let mut ret = self.return_state.into_transition_result();
+                ret.set_reconsume();
+                ret
             }
         }
     }
@@ -1120,13 +1103,14 @@ impl NumericCharacterReference {
                 .into_transition_result()
             }
             _ => {
-                let reconsume_state = States::decimal_character_reference_start(
+                let mut ret = States::decimal_character_reference_start(
                     self.return_state,
                     self.tmp,
                     character_reference_code,
-                );
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                )
+                .into_transition_result();
+                ret.set_reconsume();
+                ret
             }
         }
     }
@@ -1136,13 +1120,14 @@ impl HexadecimalCharacterReferenceStart {
     pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(ch) if ch.is_ascii_hexdigit() => {
-                let reconsume_state = States::hexadecimal_character_reference(
+                let mut ret = States::hexadecimal_character_reference(
                     self.return_state,
                     self.tmp,
                     self.character_reference_code,
-                );
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                )
+                .into_transition_result();
+                ret.set_reconsume();
+                ret
             }
             _ => {
                 let mut ret = self
@@ -1202,13 +1187,14 @@ impl DecimalCharacterReferenceStart {
     pub fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(ch) if ch.is_ascii_digit() => {
-                let reconsume_state = States::decimal_character_reference(
+                let mut ret = States::decimal_character_reference(
                     self.return_state,
                     self.tmp,
                     self.character_reference_code,
-                );
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                reconsume_state.on_character(c)
+                )
+                .into_transition_result();
+                ret.set_reconsume();
+                ret
             }
             _ => {
                 let mut ret = self
@@ -1308,15 +1294,15 @@ impl HexadecimalCharacterReference {
             )
             .into_transition_result(),
             _ => {
-                let reconsume_state = States::numeric_character_reference_end(
+                let mut ret = States::numeric_character_reference_end(
                     self.return_state,
                     self.tmp,
                     self.character_reference_code,
-                );
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
+                )
+                .into_transition_result();
 
-                ret.insert_parse_error(0, ParseError::MissingSemicolonAfterCharacterReference);
+                ret.push_parse_error(ParseError::MissingSemicolonAfterCharacterReference);
+                ret.set_reconsume();
                 ret
             }
         }
@@ -1343,15 +1329,15 @@ impl DecimalCharacterReference {
             )
             .into_transition_result(),
             _ => {
-                let reconsume_state = States::numeric_character_reference_end(
+                let mut ret = States::numeric_character_reference_end(
                     self.return_state,
                     self.tmp,
                     self.character_reference_code,
-                );
-                debug!("Reconsume on State: {:?}", reconsume_state);
-                let mut ret = reconsume_state.on_character(c);
+                )
+                .into_transition_result();
 
-                ret.insert_parse_error(0, ParseError::MissingSemicolonAfterCharacterReference);
+                ret.push_parse_error(ParseError::MissingSemicolonAfterCharacterReference);
+                ret.set_reconsume();
                 ret
             }
         }

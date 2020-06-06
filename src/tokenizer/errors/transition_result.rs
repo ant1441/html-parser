@@ -7,6 +7,7 @@ use super::{Emit, Error, ParseError, Result, States, Token};
 
 pub struct TransitionResult {
     state: Result<States>,
+    reconsume: bool,
     emit: Cell<Emit>,
 }
 
@@ -42,6 +43,7 @@ impl TransitionResult {
     fn from_result(res: Result<States>) -> Self {
         TransitionResult {
             state: res,
+            reconsume: false,
             emit: Cell::new(vec![]),
         }
     }
@@ -52,6 +54,14 @@ impl TransitionResult {
 
     pub fn is_ok(&self) -> bool {
         self.state.is_ok()
+    }
+
+    pub fn set_reconsume(&mut self) {
+        self.reconsume = true
+    }
+
+    pub fn reconsume(&self) -> bool {
+        self.reconsume
     }
 
     pub fn state(self) -> Result<States> {

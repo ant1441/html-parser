@@ -189,12 +189,12 @@ where
         // '<' in Script tag...
         // StartTag(StartTag { name: "t.length;r++)console.log(\"actionqueue\",c(t[r]))}function&&&&&&&&&&&&&&&",
         let mut state = self.state.take().unwrap();
+
+        let mut c = self.next_character().unwrap();
+        // we set reconsume to true as we've already read the initial char
+        let mut reconsume = true;
         loop {
-            let c = self.next_character().unwrap();
-
-            let res = state.on_character(c);
-            state = self.handle_transition_result(res);
-
+            trace!("State ({}): {:?}", if reconsume { "R" } else { "-" }, state);
             let res = match state {
                 States::Term(_) => return,
                 States::MarkupDeclarationOpen(ref m) => {
@@ -226,14 +226,23 @@ where
                 }
 
                 States::NumericCharacterReferenceEnd(_) => state.on_advance(),
-                _ => continue,
+                _ => {
+                    if !reconsume {
+                        // TODO: Tokenizer internal state
+                        c = self.next_character().unwrap();
+                    }
+                    state.on_character(c)
+                }
             };
-            state = self.handle_transition_result(res);
-            trace!("Second state: {:?}", state);
+            let ret = self.handle_transition_result(res);
+            // TODO: Tokenizer internal state
+            state = ret.0;
+            // TODO: Tokenizer internal state
+            reconsume = ret.1;
         }
     }
 
-    pub fn handle_transition_result(&self, mut res: TransitionResult) -> States {
+    pub fn handle_transition_result(&self, mut res: TransitionResult) -> (States, bool) {
         for token in res.emits() {
             if USE_EMIT_CACHE {
                 if !token.is_character() {
@@ -260,9 +269,10 @@ where
             let next_state_error = res.state().unwrap_err();
             panic!("Tokenizer error: {}", next_state_error);
         }
+        let reconsume = res.reconsume();
         let next_state = res.state().unwrap();
         debug!("Next State: {:?}", next_state);
-        next_state
+        (next_state, reconsume)
     }
 
     pub fn emit(&self, token: &Token) {
