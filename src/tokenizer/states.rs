@@ -438,305 +438,305 @@ impl States {
         States::data()
     }
 
-    pub(super) fn data() -> States {
+    pub(super) fn data() -> Self {
         States::Data(Data {})
     }
 
-    pub(super) fn rc_data() -> States {
+    pub(super) fn rc_data() -> Self {
         States::RcData(RcData {})
     }
 
-    pub(super) fn raw_text() -> States {
+    pub(super) fn raw_text() -> Self {
         States::RawText(RawText {})
     }
 
-    pub(super) fn script_data() -> States {
+    pub(super) fn script_data() -> Self {
         States::ScriptData(ScriptData {})
     }
 
-    pub(super) fn plain_text() -> States {
+    pub(super) fn plain_text() -> Self {
         States::PlainText(PlainText {})
     }
 
-    pub(super) fn tag_open() -> States {
+    pub(super) fn tag_open() -> Self {
         States::TagOpen(TagOpen {})
     }
 
-    pub(super) fn end_tag_open() -> States {
+    pub(super) fn end_tag_open() -> Self {
         States::EndTagOpen(EndTagOpen {})
     }
 
-    pub(super) fn tag_name(token: token::Token) -> States {
+    pub(super) fn tag_name(token: token::Token) -> Self {
         States::TagName(TagName { token })
     }
 
-    pub(super) fn rc_data_less_than_sign() -> States {
+    pub(super) fn rc_data_less_than_sign() -> Self {
         States::RcDataLessThanSign(RcDataLessThanSign {})
     }
 
-    pub(super) fn rc_data_end_tag_open() -> States {
+    pub(super) fn rc_data_end_tag_open() -> Self {
         States::RcDataEndTagOpen(RcDataEndTagOpen {})
     }
 
-    pub(super) fn rc_data_end_tag_name(token: token::Token, tmp: String) -> States {
+    pub(super) fn rc_data_end_tag_name(token: token::Token, tmp: String) -> Self {
         States::RcDataEndTagName(RcDataEndTagName { token, tmp })
     }
 
-    pub(super) fn raw_text_less_than_sign() -> States {
+    pub(super) fn raw_text_less_than_sign() -> Self {
         States::RawTextLessThanSign(RawTextLessThanSign {})
     }
 
-    pub(super) fn raw_text_end_tag_open() -> States {
+    pub(super) fn raw_text_end_tag_open() -> Self {
         States::RawTextEndTagOpen(RawTextEndTagOpen {})
     }
 
-    pub(super) fn raw_text_end_tag_name() -> States {
+    pub(super) fn raw_text_end_tag_name() -> Self {
         States::RawTextEndTagName(RawTextEndTagName {})
     }
 
-    pub(super) fn script_data_less_than_sign() -> States {
+    pub(super) fn script_data_less_than_sign() -> Self {
         States::ScriptDataLessThanSign(ScriptDataLessThanSign {})
     }
 
-    pub(super) fn script_data_end_tag_open() -> States {
+    pub(super) fn script_data_end_tag_open() -> Self {
         States::ScriptDataEndTagOpen(ScriptDataEndTagOpen {})
     }
 
-    pub(super) fn script_data_end_tag_name() -> States {
+    pub(super) fn script_data_end_tag_name() -> Self {
         States::ScriptDataEndTagName(ScriptDataEndTagName {})
     }
 
-    pub(super) fn script_data_escape_start() -> States {
+    pub(super) fn script_data_escape_start() -> Self {
         States::ScriptDataEscapeStart(ScriptDataEscapeStart {})
     }
 
-    pub(super) fn script_data_escape_start_dash() -> States {
+    pub(super) fn script_data_escape_start_dash() -> Self {
         States::ScriptDataEscapeStartDash(ScriptDataEscapeStartDash {})
     }
 
-    pub(super) fn script_data_escaped() -> States {
+    pub(super) fn script_data_escaped() -> Self {
         States::ScriptDataEscaped(ScriptDataEscaped {})
     }
 
-    pub(super) fn script_data_escaped_dash() -> States {
+    pub(super) fn script_data_escaped_dash() -> Self {
         States::ScriptDataEscapedDash(ScriptDataEscapedDash {})
     }
 
-    pub(super) fn script_data_escaped_dash_dash() -> States {
+    pub(super) fn script_data_escaped_dash_dash() -> Self {
         States::ScriptDataEscapedDashDash(ScriptDataEscapedDashDash {})
     }
 
-    pub(super) fn script_data_escaped_less_than_sign() -> States {
+    pub(super) fn script_data_escaped_less_than_sign() -> Self {
         States::ScriptDataEscapedLessThanSign(ScriptDataEscapedLessThanSign {})
     }
 
-    pub(super) fn script_data_escaped_end_tag_open() -> States {
+    pub(super) fn script_data_escaped_end_tag_open() -> Self {
         States::ScriptDataEscapedEndTagOpen(ScriptDataEscapedEndTagOpen {})
     }
 
-    pub(super) fn script_data_escaped_end_tag_name() -> States {
+    pub(super) fn script_data_escaped_end_tag_name() -> Self {
         States::ScriptDataEscapedEndTagName(ScriptDataEscapedEndTagName {})
     }
 
-    pub(super) fn script_data_double_escape_start() -> States {
+    pub(super) fn script_data_double_escape_start() -> Self {
         States::ScriptDataDoubleEscapeStart(ScriptDataDoubleEscapeStart {})
     }
 
-    pub(super) fn script_data_double_escaped() -> States {
+    pub(super) fn script_data_double_escaped() -> Self {
         States::ScriptDataDoubleEscaped(ScriptDataDoubleEscaped {})
     }
 
-    pub(super) fn script_data_double_escaped_dash() -> States {
+    pub(super) fn script_data_double_escaped_dash() -> Self {
         States::ScriptDataDoubleEscapedDash(ScriptDataDoubleEscapedDash {})
     }
 
-    pub(super) fn script_data_double_escaped_dash_dash() -> States {
+    pub(super) fn script_data_double_escaped_dash_dash() -> Self {
         States::ScriptDataDoubleEscapedDashDash(ScriptDataDoubleEscapedDashDash {})
     }
 
-    pub(super) fn script_data_double_escaped_less_than_sign() -> States {
+    pub(super) fn script_data_double_escaped_less_than_sign() -> Self {
         States::ScriptDataDoubleEscapedLessThanSign(ScriptDataDoubleEscapedLessThanSign {})
     }
 
-    pub(super) fn script_data_double_escape_end() -> States {
+    pub(super) fn script_data_double_escape_end() -> Self {
         States::ScriptDataDoubleEscapeEnd(ScriptDataDoubleEscapeEnd {})
     }
 
-    pub(super) fn before_attribute_name(token: token::Token) -> States {
+    pub(super) fn before_attribute_name(token: token::Token) -> Self {
         States::BeforeAttributeName(BeforeAttributeName { token })
     }
 
-    pub(super) fn attribute_name(token: token::Token) -> States {
+    pub(super) fn attribute_name(token: token::Token) -> Self {
         States::AttributeName(AttributeName { token })
     }
 
-    pub(super) fn after_attribute_name(token: token::Token) -> States {
+    pub(super) fn after_attribute_name(token: token::Token) -> Self {
         States::AfterAttributeName(AfterAttributeName { token })
     }
 
-    pub(super) fn before_attribute_value(token: token::Token) -> States {
+    pub(super) fn before_attribute_value(token: token::Token) -> Self {
         States::BeforeAttributeValue(BeforeAttributeValue { token })
     }
 
-    pub(super) fn attribute_value_double_quoted(token: token::Token) -> States {
+    pub(super) fn attribute_value_double_quoted(token: token::Token) -> Self {
         States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { token })
     }
 
-    pub(super) fn attribute_value_single_quoted(token: token::Token) -> States {
+    pub(super) fn attribute_value_single_quoted(token: token::Token) -> Self {
         States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { token })
     }
 
-    pub(super) fn attribute_value_unquoted(token: token::Token) -> States {
+    pub(super) fn attribute_value_unquoted(token: token::Token) -> Self {
         States::AttributeValueUnquoted(AttributeValueUnquoted { token })
     }
 
-    pub(super) fn after_attribute_value_quoted(token: token::Token) -> States {
+    pub(super) fn after_attribute_value_quoted(token: token::Token) -> Self {
         States::AfterAttributeValueQuoted(AfterAttributeValueQuoted { token })
     }
 
-    pub(super) fn self_closing_start_tag(token: token::Token) -> States {
+    pub(super) fn self_closing_start_tag(token: token::Token) -> Self {
         States::SelfClosingStartTag(SelfClosingStartTag { token })
     }
 
-    pub(super) fn bogus_comment(token: token::Token) -> States {
+    pub(super) fn bogus_comment(token: token::Token) -> Self {
         States::BogusComment(BogusComment { token })
     }
 
-    pub(super) fn markup_declaration_open() -> States {
+    pub(super) fn markup_declaration_open() -> Self {
         States::MarkupDeclarationOpen(MarkupDeclarationOpen {})
     }
 
-    pub(super) fn comment_start(token: token::Token) -> States {
+    pub(super) fn comment_start(token: token::Token) -> Self {
         States::CommentStart(CommentStart { token })
     }
 
-    pub(super) fn comment_start_dash(token: token::Token) -> States {
+    pub(super) fn comment_start_dash(token: token::Token) -> Self {
         States::CommentStartDash(CommentStartDash { token })
     }
 
-    pub(super) fn comment(token: token::Token) -> States {
+    pub(super) fn comment(token: token::Token) -> Self {
         States::Comment(Comment { token })
     }
 
-    pub(super) fn comment_less_than_sign(token: token::Token) -> States {
+    pub(super) fn comment_less_than_sign(token: token::Token) -> Self {
         States::CommentLessThanSign(CommentLessThanSign { token })
     }
 
-    pub(super) fn comment_less_than_sign_bang() -> States {
+    pub(super) fn comment_less_than_sign_bang() -> Self {
         States::CommentLessThanSignBang(CommentLessThanSignBang {})
     }
 
-    pub(super) fn comment_less_than_sign_bang_dash() -> States {
+    pub(super) fn comment_less_than_sign_bang_dash() -> Self {
         States::CommentLessThanSignBangDash(CommentLessThanSignBangDash {})
     }
 
-    pub(super) fn comment_less_than_sign_bang_dash_dash() -> States {
+    pub(super) fn comment_less_than_sign_bang_dash_dash() -> Self {
         States::CommentLessThanSignBangDashDash(CommentLessThanSignBangDashDash {})
     }
 
-    pub(super) fn comment_end_dash(token: token::Token) -> States {
+    pub(super) fn comment_end_dash(token: token::Token) -> Self {
         States::CommentEndDash(CommentEndDash { token })
     }
 
-    pub(super) fn comment_end(token: token::Token) -> States {
+    pub(super) fn comment_end(token: token::Token) -> Self {
         States::CommentEnd(CommentEnd { token })
     }
 
-    pub(super) fn comment_end_bang(token: token::Token) -> States {
+    pub(super) fn comment_end_bang(token: token::Token) -> Self {
         States::CommentEndBang(CommentEndBang { token })
     }
 
-    pub(super) fn doctype() -> States {
+    pub(super) fn doctype() -> Self {
         States::Doctype(Doctype {})
     }
 
-    pub(super) fn before_doctype_name() -> States {
+    pub(super) fn before_doctype_name() -> Self {
         States::BeforeDoctypeName(BeforeDoctypeName {})
     }
 
-    pub(super) fn doctype_name(token: token::Token) -> States {
+    pub(super) fn doctype_name(token: token::Token) -> Self {
         States::DoctypeName(DoctypeName { token })
     }
 
-    pub(super) fn after_doctype_name() -> States {
+    pub(super) fn after_doctype_name() -> Self {
         States::AfterDoctypeName(AfterDoctypeName {})
     }
 
-    pub(super) fn after_doctype_public_keyword() -> States {
+    pub(super) fn after_doctype_public_keyword() -> Self {
         States::AfterDoctypePublicKeyword(AfterDoctypePublicKeyword {})
     }
 
-    pub(super) fn before_doctype_public_identifier() -> States {
+    pub(super) fn before_doctype_public_identifier() -> Self {
         States::BeforeDoctypePublicIdentifier(BeforeDoctypePublicIdentifier {})
     }
 
-    pub(super) fn doctype_public_identifier_double_quoted() -> States {
+    pub(super) fn doctype_public_identifier_double_quoted() -> Self {
         States::DoctypePublicIdentifierDoubleQuoted(DoctypePublicIdentifierDoubleQuoted {})
     }
 
-    pub(super) fn doctype_public_identifier_single_quoted() -> States {
+    pub(super) fn doctype_public_identifier_single_quoted() -> Self {
         States::DoctypePublicIdentifierSingleQuoted(DoctypePublicIdentifierSingleQuoted {})
     }
 
-    pub(super) fn after_doctype_public_identifier() -> States {
+    pub(super) fn after_doctype_public_identifier() -> Self {
         States::AfterDoctypePublicIdentifier(AfterDoctypePublicIdentifier {})
     }
 
-    pub(super) fn between_doctype_public_and_system_identifiers() -> States {
+    pub(super) fn between_doctype_public_and_system_identifiers() -> Self {
         States::BetweenDoctypePublicAndSystemIdentifiers(
             BetweenDoctypePublicAndSystemIdentifiers {},
         )
     }
 
-    pub(super) fn after_doctype_system_keyword() -> States {
+    pub(super) fn after_doctype_system_keyword() -> Self {
         States::AfterDoctypeSystemKeyword(AfterDoctypeSystemKeyword {})
     }
 
-    pub(super) fn before_doctype_system_identifier() -> States {
+    pub(super) fn before_doctype_system_identifier() -> Self {
         States::BeforeDoctypeSystemIdentifier(BeforeDoctypeSystemIdentifier {})
     }
 
-    pub(super) fn doctype_system_identifier_double_quoted() -> States {
+    pub(super) fn doctype_system_identifier_double_quoted() -> Self {
         States::DoctypeSystemIdentifierDoubleQuoted(DoctypeSystemIdentifierDoubleQuoted {})
     }
 
-    pub(super) fn doctype_system_identifier_single_quoted() -> States {
+    pub(super) fn doctype_system_identifier_single_quoted() -> Self {
         States::DoctypeSystemIdentifierSingleQuoted(DoctypeSystemIdentifierSingleQuoted {})
     }
 
-    pub(super) fn after_doctype_system_identifier() -> States {
+    pub(super) fn after_doctype_system_identifier() -> Self {
         States::AfterDoctypeSystemIdentifier(AfterDoctypeSystemIdentifier {})
     }
 
-    pub(super) fn bogus_doctype() -> States {
+    pub(super) fn bogus_doctype() -> Self {
         States::BogusDoctype(BogusDoctype {})
     }
 
-    pub(super) fn cdata_section() -> States {
+    pub(super) fn cdata_section() -> Self {
         States::CdataSection(CdataSection {})
     }
 
-    pub(super) fn cdata_section_bracket() -> States {
+    pub(super) fn cdata_section_bracket() -> Self {
         States::CdataSectionBracket(CdataSectionBracket {})
     }
 
-    pub(super) fn cdata_section_end() -> States {
+    pub(super) fn cdata_section_end() -> Self {
         States::CdataSectionEnd(CdataSectionEnd {})
     }
 
-    pub(super) fn character_reference(return_state: Box<States>, tmp: String) -> States {
+    pub(super) fn character_reference(return_state: Box<States>, tmp: String) -> Self {
         States::CharacterReference(CharacterReference { return_state, tmp })
     }
 
-    pub(super) fn named_character_reference(return_state: Box<States>, tmp: String) -> States {
+    pub(super) fn named_character_reference(return_state: Box<States>, tmp: String) -> Self {
         States::NamedCharacterReference(NamedCharacterReference { return_state, tmp })
     }
 
-    pub(super) fn ambiguous_ampersand(return_state: Box<States>) -> States {
+    pub(super) fn ambiguous_ampersand(return_state: Box<States>) -> Self {
         States::AmbiguousAmpersand(AmbiguousAmpersand { return_state })
     }
 
-    pub(super) fn numeric_character_reference(return_state: Box<States>, tmp: String) -> States {
+    pub(super) fn numeric_character_reference(return_state: Box<States>, tmp: String) -> Self {
         States::NumericCharacterReference(NumericCharacterReference { return_state, tmp })
     }
 
@@ -744,7 +744,7 @@ impl States {
         return_state: Box<States>,
         tmp: String,
         character_reference_code: CharacterReferenceCode,
-    ) -> States {
+    ) -> Self {
         States::HexadecimalCharacterReferenceStart(HexadecimalCharacterReferenceStart {
             return_state,
             tmp,
@@ -756,7 +756,7 @@ impl States {
         return_state: Box<States>,
         tmp: String,
         character_reference_code: CharacterReferenceCode,
-    ) -> States {
+    ) -> Self {
         States::DecimalCharacterReferenceStart(DecimalCharacterReferenceStart {
             return_state,
             tmp,
@@ -768,7 +768,7 @@ impl States {
         return_state: Box<States>,
         tmp: String,
         character_reference_code: CharacterReferenceCode,
-    ) -> States {
+    ) -> Self {
         States::HexadecimalCharacterReference(HexadecimalCharacterReference {
             return_state,
             tmp,
@@ -780,7 +780,7 @@ impl States {
         return_state: Box<States>,
         tmp: String,
         character_reference_code: CharacterReferenceCode,
-    ) -> States {
+    ) -> Self {
         States::DecimalCharacterReference(DecimalCharacterReference {
             tmp,
             return_state,
@@ -792,7 +792,7 @@ impl States {
         return_state: Box<States>,
         tmp: String,
         character_reference_code: CharacterReferenceCode,
-    ) -> States {
+    ) -> Self {
         States::NumericCharacterReferenceEnd(NumericCharacterReferenceEnd {
             tmp,
             return_state,
@@ -800,7 +800,7 @@ impl States {
         })
     }
 
-    pub(super) fn term() -> States {
+    pub(super) fn term() -> Self {
         States::Term(Term {})
     }
 
@@ -944,7 +944,7 @@ impl States {
 
 impl Default for States {
     fn default() -> Self {
-        States::data()
+        States::new()
     }
 }
 

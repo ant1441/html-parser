@@ -1,4 +1,4 @@
-use std::io::{self, BufReader, Read, Seek, SeekFrom};
+use std::io::{self, BufReader, SeekFrom , prelude::*};
 use std::{
     cell::{Cell, RefCell},
     str,
@@ -13,14 +13,16 @@ mod named_character_references;
 mod states;
 mod token;
 mod transitions;
+mod transition_result;
 
 use self::{
     states::{Character, NamedCharacterReference, PossibleCharacterReferenceWithNextChar, States},
-    token::Token,
 };
+pub(crate) use token::Token;
+pub(self) use transition_result::TransitionResult;
 
 use codepoint::Codepoint;
-use errors::{Result, TransitionResult};
+use errors::{Result};
 use named_character_references::get_entities;
 
 type Emit = Vec<Token>;
@@ -45,12 +47,12 @@ impl<R> Tokenizer<R>
 where
     R: io::Read + io::Seek,
 {
-    pub fn new(data: R, collapse_chars: bool) -> Self {
+    pub fn new(reader: R, collapse_chars: bool) -> Self {
         Tokenizer {
             // TODO, we assume this is UTF-8
             // To be standard compliant we should use the
             // [encoding sniffing algorithm](https://html.spec.whatwg.org/multipage/parsing.html#encoding-sniffing-algorithm)
-            reader: BufReader::new(data),
+            reader: BufReader::new(reader),
             collapse_chars,
             state: Some(States::new()),
             reconsume: false,
@@ -256,7 +258,6 @@ where
 {
     type Item = token::Token;
 
-    #[allow(unreachable_code, unused_variables, unused_assignments)]
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if !self.token_emit_cache.borrow().is_empty() {

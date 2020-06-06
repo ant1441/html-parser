@@ -3,22 +3,15 @@ use std::{error, fmt};
 use auto_enums::enum_derive;
 use derive_more::From;
 
-mod parse_error;
 
-use super::States;
-pub use parse_error::ParseError;
+use super::{ States};
 
+pub type TransitionResult = ();
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[enum_derive(Error, From)]
 pub enum Error {
-    Utf8(std::str::Utf8Error),
-    IO(std::io::Error),
-    CellBorrowMut(std::cell::BorrowMutError),
-    CellBorrow(std::cell::BorrowError),
-
     StateTransition(StateTransitionError),
-    Parse(ParseError),
 }
 
 #[derive(Debug)]
