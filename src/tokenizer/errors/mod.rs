@@ -7,27 +7,27 @@ mod parse_error;
 mod transition_result;
 
 use super::{Emit, States, Token};
-pub use transition_result::TransitionResult;
+pub(crate) use transition_result::TransitionResult;
 pub use parse_error::ParseError;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[enum_derive(Error, From)]
 pub enum Error {
-    Utf8Error(std::str::Utf8Error),
-    IOError(std::io::Error),
-    CellBorrowMutError(std::cell::BorrowMutError),
-    CellBorrowError(std::cell::BorrowError),
+    Utf8(std::str::Utf8Error),
+    IO(std::io::Error),
+    CellBorrowMut(std::cell::BorrowMutError),
+    CellBorrow(std::cell::BorrowError),
 
-    StateTransitionError(StateTransitionError),
-    ParseError(ParseError),
+    StateTransition(StateTransitionError),
+    Parse(ParseError),
 }
 
 #[derive(Debug)]
 pub struct StateTransitionError(States, &'static str);
 
 impl StateTransitionError {
-    pub fn new(state: States, transition: &'static str) -> Self {
+    pub(super) fn new(state: States, transition: &'static str) -> Self {
         StateTransitionError(state, transition)
     }
 }

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! A code point is a Unicode code point and is represented as "U+" followed by four-to-six [ASCII upper hex digits](https://infra.spec.whatwg.org/#ascii-upper-hex-digit),
 //! in the range U+0000 to U+10FFFF, inclusive.
 //! A code point’s value is its underlying number.

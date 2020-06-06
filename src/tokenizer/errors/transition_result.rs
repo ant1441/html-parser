@@ -5,7 +5,7 @@ use std::cell::Cell;
 
 use super::{Emit, Error, ParseError, Result, States, Token};
 
-pub struct TransitionResult {
+pub(crate) struct TransitionResult {
     state: Result<States>,
     reconsume: bool,
     emit: Cell<Emit>,
@@ -36,7 +36,7 @@ impl From<States> for TransitionResult {
 }
 
 impl TransitionResult {
-    pub fn from_state(state: States) -> Self {
+    pub(in super::super) fn from_state(state: States) -> Self {
         TransitionResult::from_result(Ok(state))
     }
 
@@ -48,48 +48,50 @@ impl TransitionResult {
         }
     }
 
-    pub fn is_err(&self) -> bool {
+    pub(in super::super) fn is_err(&self) -> bool {
         self.state.is_err()
     }
 
-    pub fn is_ok(&self) -> bool {
+    #[allow(dead_code)]
+    pub(in super::super) fn is_ok(&self) -> bool {
         self.state.is_ok()
     }
 
-    pub fn set_reconsume(&mut self) {
+    pub(in super::super) fn set_reconsume(&mut self) {
         self.reconsume = true
     }
 
-    pub fn reconsume(&self) -> bool {
+    pub(in super::super) fn reconsume(&self) -> bool {
         self.reconsume
     }
 
-    pub fn state(self) -> Result<States> {
+    pub(in super::super) fn state(self) -> Result<States> {
         self.state
     }
 
-    pub fn emits(&mut self) -> Emit {
+    pub(in super::super) fn emits(&mut self) -> Emit {
         self.emit.replace(Vec::new())
     }
 
-    pub fn push_emit(&mut self, token: Token) {
+    pub(in super::super) fn push_emit(&mut self, token: Token) {
         let mut emits = self.emit.take();
         emits.push(token);
         self.emit.replace(emits);
     }
 
-    pub fn insert_emit(&mut self, index: usize, token: Token) {
+    #[allow(dead_code)]
+    pub(in super::super) fn insert_emit(&mut self, index: usize, token: Token) {
         let mut emits = self.emit.take();
         emits.insert(index, token);
         self.emit.replace(emits);
     }
 
-    pub fn push_parse_error(&mut self, err: ParseError) {
+    pub(in super::super) fn push_parse_error(&mut self, err: ParseError) {
         println!("Parse Error: {}", err);
     }
 
     // TODO Parse errors should be an enum, not a str
-    pub fn insert_parse_error(&mut self, _index: usize, err: ParseError) {
+    pub(in super::super) fn insert_parse_error(&mut self, _index: usize, err: ParseError) {
         println!("Parse Error: {}", err);
     }
 }

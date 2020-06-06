@@ -1,6 +1,5 @@
-#![allow(dead_code)]
-
 mod tokenizer;
+mod parser;
 
 pub use tokenizer::Tokenizer;
 

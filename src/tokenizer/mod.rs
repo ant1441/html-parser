@@ -19,13 +19,11 @@ use self::{
     token::Token,
 };
 
-pub use codepoint::Codepoint;
-pub use errors::{Error, Result, TransitionResult};
-pub use named_character_references::get_entities;
+use codepoint::Codepoint;
+use errors::{Result, TransitionResult};
+use named_character_references::get_entities;
 
-const USE_EMIT_CACHE: bool = true;
-
-pub type Emit = Vec<Token>;
+type Emit = Vec<Token>;
 
 pub struct Tokenizer<R>
 where
@@ -72,6 +70,14 @@ where
     }
 
     fn next_character(&mut self) -> Result<Character> {
+        // TODO: https://html.spec.whatwg.org/multipage/parsing.html#preprocessing-the-input-stream
+        // Any occurrences of surrogates are surrogate-in-input-stream parse errors.
+        // Any occurrences of noncharacters are noncharacter-in-input-stream parse errors
+        // and any occurrences of controls other than ASCII whitespace and U+0000 NULL
+        // characters are control-character-in-input-stream parse errors.
+        //
+        // TODO: normalizing newlines
+
         let mut potential_char = Vec::with_capacity(4);
         loop {
             let mut b = [0; 1];
@@ -203,7 +209,7 @@ where
         }
     }
 
-    pub fn handle_transition_result(&mut self, mut res: TransitionResult) -> Option<token::Token> {
+    fn handle_transition_result(&mut self, mut res: TransitionResult) -> Option<token::Token> {
         for token in res.emits() {
             if self.collapse_chars {
                 if !token.is_character() {

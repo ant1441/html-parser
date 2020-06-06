@@ -9,7 +9,7 @@ use super::{codepoint, errors::ParseError, get_entities, states::*, token, Trans
 // TODO: unwraps
 
 impl Data {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
         trace!("Data({:?})", c);
         match c {
             Character::Char('&') => {
@@ -45,7 +45,7 @@ impl Data {
 }
 
 impl TagOpen {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('!') => States::markup_declaration_open().into(),
             Character::Char('/') => States::end_tag_open().into(),
@@ -82,7 +82,7 @@ impl TagOpen {
 }
 
 impl EndTagOpen {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(a) if a.is_alphabetic() => {
                 let token = token::EndTag {
@@ -116,7 +116,7 @@ impl EndTagOpen {
 }
 
 impl TagName {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match self.token {
             token::Token::StartTag(_) | token::Token::EndTag(_) => (),
             _ => unreachable!(),
@@ -158,7 +158,7 @@ impl TagName {
 }
 
 impl RcDataEndTagName {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -202,7 +202,7 @@ impl RcDataEndTagName {
 }
 
 impl BeforeAttributeName {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -230,7 +230,7 @@ impl BeforeAttributeName {
 }
 
 impl AttributeName {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -308,7 +308,7 @@ impl AttributeName {
 }
 
 impl AfterAttributeName {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -338,7 +338,7 @@ impl AfterAttributeName {
 }
 
 impl BeforeAttributeValue {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -362,7 +362,7 @@ impl BeforeAttributeValue {
 }
 
 impl AttributeValueDoubleQuoted {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('"') => States::after_attribute_value_quoted(self.token).into(),
             Character::Char('&') => States::character_reference(
@@ -401,7 +401,7 @@ impl AttributeValueDoubleQuoted {
 }
 
 impl AttributeValueSingleQuoted {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\'') => States::after_attribute_value_quoted(self.token).into(),
             Character::Char('&') => States::character_reference(
@@ -440,7 +440,7 @@ impl AttributeValueSingleQuoted {
 }
 
 impl AttributeValueUnquoted {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -487,7 +487,7 @@ impl AttributeValueUnquoted {
 }
 
 impl AfterAttributeValueQuoted {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -517,7 +517,7 @@ impl AfterAttributeValueQuoted {
 }
 
 impl SelfClosingStartTag {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('>') => {
                 self.token.set_self_closing(token::SelfClosingFlag::Set);
@@ -543,7 +543,7 @@ impl SelfClosingStartTag {
 }
 
 impl BogusComment {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('>') => {
                 let mut ret = States::data().into_transition_result();
@@ -576,7 +576,7 @@ impl BogusComment {
 }
 
 impl MarkupDeclarationOpen {
-    pub fn on_next_few_characters(self, next: NextFewCharacters) -> TransitionResult {
+    pub(super) fn on_next_few_characters(self, next: NextFewCharacters) -> TransitionResult {
         if next.as_ref().is_none() {
             let mut ret = States::bogus_comment(String::new().into()).into_transition_result();
             ret.push_parse_error(ParseError::IncorrectlyOpenedComment);
@@ -610,7 +610,7 @@ impl MarkupDeclarationOpen {
 }
 
 impl CommentStart {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('-') => States::comment_start_dash(self.token).into(),
             Character::Char('>') => {
@@ -629,7 +629,7 @@ impl CommentStart {
 }
 
 impl CommentStartDash {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('-') => States::comment_end(self.token).into(),
             Character::Char('>') => {
@@ -657,7 +657,7 @@ impl CommentStartDash {
 }
 
 impl Comment {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('<') => {
                 self.token.push('<');
@@ -691,7 +691,7 @@ impl Comment {
 }
 
 impl CommentEndDash {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('-') => States::comment_end(self.token).into(),
             Character::Eof => {
@@ -713,7 +713,7 @@ impl CommentEndDash {
 }
 
 impl CommentEnd {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('>') => {
                 let mut ret = States::data().into_transition_result();
@@ -745,7 +745,7 @@ impl CommentEnd {
 }
 
 impl Doctype {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -780,7 +780,7 @@ impl Doctype {
 }
 
 impl BeforeDoctypeName {
-    pub fn on_character(self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -840,7 +840,7 @@ impl BeforeDoctypeName {
 }
 
 impl DoctypeName {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
             | Character::LineFeed
@@ -880,7 +880,7 @@ impl DoctypeName {
 }
 
 impl CharacterReference {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         self.tmp = String::new();
         self.tmp.push('&');
         match c {
@@ -929,7 +929,7 @@ impl CharacterReference {
 }
 
 impl NamedCharacterReference {
-    pub fn on_possible_character_reference_with_next_char(
+    pub(super) fn on_possible_character_reference_with_next_char(
         mut self,
         input: PossibleCharacterReferenceWithNextChar,
     ) -> TransitionResult {
@@ -1032,7 +1032,7 @@ impl NamedCharacterReference {
 }
 
 impl AmbiguousAmpersand {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char(a) if a.is_alphanumeric() => {
                 if let Some(token) = self.get_attribute_token() {
@@ -1076,7 +1076,7 @@ impl AmbiguousAmpersand {
 }
 
 impl NumericCharacterReference {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         let character_reference_code = 0;
         match c {
             Character::Char(ch @ 'x') | Character::Char(ch @ 'X') => {
@@ -1103,7 +1103,7 @@ impl NumericCharacterReference {
 }
 
 impl HexadecimalCharacterReferenceStart {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char(ch) if ch.is_ascii_hexdigit() => {
                 let mut ret = States::hexadecimal_character_reference(
@@ -1149,7 +1149,7 @@ impl HexadecimalCharacterReferenceStart {
 }
 
 impl DecimalCharacterReferenceStart {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char(ch) if ch.is_ascii_digit() => {
                 let mut ret = States::decimal_character_reference(
@@ -1195,7 +1195,7 @@ impl DecimalCharacterReferenceStart {
 }
 
 impl HexadecimalCharacterReference {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char(ch) if ch.is_ascii_digit() => {
                 self.character_reference_code *= 16;
@@ -1254,7 +1254,7 @@ impl HexadecimalCharacterReference {
 }
 
 impl DecimalCharacterReference {
-    pub fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char(ch) if ch.is_ascii_digit() => {
                 self.character_reference_code *= 10;
@@ -1289,7 +1289,7 @@ impl DecimalCharacterReference {
 }
 
 impl NumericCharacterReferenceEnd {
-    pub fn on_advance(mut self) -> TransitionResult {
+    pub(super) fn on_advance(mut self) -> TransitionResult {
         let (parse_err, character_reference_code) = match self.character_reference_code {
             0x00 => (Some(ParseError::NullCharacterReference), 0xFFFD),
             c if codepoint::is_surrogate(c) => (

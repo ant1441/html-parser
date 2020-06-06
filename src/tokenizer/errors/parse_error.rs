@@ -1,6 +1,7 @@
 use std::{error, fmt};
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[allow(dead_code)]
 pub enum ParseError {
     /// This error occurs if the parser encounters an empty comment that is abruptly closed by a U+003E (>) code point (i.e., <!--> or <!--->). The parser behaves as if the comment is closed correctly.
     AbruptClosingOfEmptyComment,
