@@ -6,7 +6,7 @@ macro_rules! testdata_tests {
         #[test]
         fn $name() {
             let mut f = fs::File::open(concat!("./tests/testdata/", stringify!($name), ".html")).unwrap();
-            let mut tokenizer = html_parser::Tokenizer::new(&mut f);
+            let mut tokenizer = html_parser::Tokenizer::new(&mut f, true);
             tokenizer.run();
         }
     )*

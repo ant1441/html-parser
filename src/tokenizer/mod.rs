@@ -313,3 +313,119 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::io::Cursor;
+    use token::*;
+
+    macro_rules! token_test {
+        ($name:ident, $html:literal, $($token:expr)*) => {
+            #[test]
+            fn $name() {
+                let mut f = Cursor::new($html);
+                let mut tokenizer = Tokenizer::new(&mut f, true);
+
+                $(
+                    assert_eq!(tokenizer.next().unwrap(), $token);
+                )*
+
+                assert_eq!(tokenizer.next().unwrap(), Token::Eof, "Expected EOF");
+                assert!(tokenizer.next().is_none(), "Extra tokens found!");
+            }
+        }
+    }
+
+    token_test! {
+        doctype,
+        "<!DOCTYPE>",
+        Token::Doctype(Doctype {
+            force_quirks: ForceQuirksFlag::On,
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        doctype_lower,
+        "<!doctype>",
+        Token::Doctype(Doctype {
+            force_quirks: ForceQuirksFlag::On,
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        named_doctype,
+        "<!DOCTYPE html>",
+        Token::Doctype(Doctype {
+            name: Some("html".to_string()),
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        simple_tag,
+        "<html>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        simple_tag_bare_attr,
+        "<html foo>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            attributes: vec![Attribute::new("foo", "", false)],
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        simple_tag_attr,
+        "<html foo=\"bar\">",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            attributes: vec![Attribute::new("foo", "bar", false)],
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        simple_tag_attr_single_quote,
+        "<html foo='bar'>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            attributes: vec![Attribute::new("foo", "bar", false)],
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        simple_tag_multi_attr,
+        "<html foo=\"bar\" baz=\"quux\">",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            attributes: vec![
+                Attribute::new("foo", "bar", false),
+                Attribute::new("baz", "quux", false)
+            ],
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        open_close_tag,
+        "<html></html>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+        Token::EndTag(EndTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+    }
+}

@@ -328,6 +328,15 @@ impl fmt::Display for EndTag {
 }
 
 impl Attribute {
+    #[cfg(test)]
+    pub fn new(name: &str, value: &str, duplicate: bool) -> Self {
+        Attribute {
+            name: name.to_string(),
+            value: value.to_string(),
+            duplicate,
+        }
+    }
+
     pub(crate) fn push_name(&mut self, c: char) {
         self.name.push(c);
     }
