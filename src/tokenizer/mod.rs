@@ -95,7 +95,9 @@ where
         if self.reader.read_exact(&mut buffer).is_err() {
             return false;
         }
-        match str::from_utf8(&buffer) {
+        let read = str::from_utf8(&buffer);
+        trace!("next_few_characters_are:: Read {:?}", read);
+        match read {
             Ok(s)
                 if (!case_insesitive && (s == other))
                     || (case_insesitive && (s.eq_ignore_ascii_case(other))) =>
@@ -195,16 +197,15 @@ where
 
             let res = match state {
                 States::Term(_) => return,
-                States::MarkupDeclarationOpen(_) => {
+                States::MarkupDeclarationOpen(ref m) => {
                     if self.next_few_characters_are("--", false) {
                         state.on_next_few_characters(Some("--".to_string()).into())
                     } else if self.next_few_characters_are("DOCTYPE", true) {
-                        // TODO: should be case insensitive
                         state.on_next_few_characters(Some("DOCTYPE".to_string()).into())
                     } else if self.next_few_characters_are("[CDATA[", false) {
                         state.on_next_few_characters(Some("[CDATA[".to_string()).into())
                     } else {
-                        todo!("MarkupDeclarationOpen::*");
+                        todo!("MarkupDeclarationOpen::{:?}", m);
                     }
                 }
                 States::NamedCharacterReference(NamedCharacterReference {

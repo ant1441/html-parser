@@ -253,8 +253,6 @@ impl StartTag {
 
 impl fmt::Display for StartTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        assert!(self.self_closing == SelfClosingFlag::Unset, "`tokenizer::token::StartTag` doesn't implement `std::fmt::Display` when `self_closing` is set");
-
         write!(f, "<{}", self.name)?;
         for attribute in self.attributes.iter() {
             write!(f, " {}", attribute.name)?;
@@ -262,7 +260,11 @@ impl fmt::Display for StartTag {
                 write!(f, "=\"{}\"", attribute.value)?;
             }
         }
-        write!(f, ">")
+        if self.self_closing == SelfClosingFlag::Set {
+            write!(f, "/>")
+        } else {
+            write!(f, ">")
+        }
     }
 }
 
@@ -312,7 +314,7 @@ impl EndTag {
 
 impl fmt::Display for EndTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        assert!(self.self_closing == SelfClosingFlag::Unset, "`tokenizer::token::StartTag` doesn't implement `std::fmt::Display` when `self_closing` is set");
+        assert!(self.self_closing == SelfClosingFlag::Unset, "`tokenizer::token::EndTag` doesn't implement `std::fmt::Display` when `self_closing` is set");
 
         write!(f, "</{}", self.name)?;
         for attribute in self.attributes.iter() {
