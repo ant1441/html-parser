@@ -34,7 +34,6 @@ where
     reader: BufReader<R>,
     collapse_chars: bool,
 
-    // TODO: Cell?
     state: Option<States>,
     reconsume: bool,
     last_char: Option<Character>,
