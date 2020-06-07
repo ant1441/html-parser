@@ -119,7 +119,9 @@ create_states! {
 pub(super) struct Data {}
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct RcData {}
+pub(super) struct RcData {
+    pub(crate) tmp: String,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct RawText {}
@@ -142,10 +144,14 @@ pub(super) struct TagName {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct RcDataLessThanSign {}
+pub(super) struct RcDataLessThanSign {
+    pub(crate) tmp: String,
+}
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct RcDataEndTagOpen {}
+pub(super) struct RcDataEndTagOpen {
+    pub(crate) tmp: String,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct RcDataEndTagName {
@@ -442,8 +448,10 @@ impl States {
         States::Data(Data {})
     }
 
-    pub(super) fn rc_data() -> Self {
-        States::RcData(RcData {})
+    pub(super) fn rc_data<TMP: ToString>(tmp: TMP) -> Self {
+        States::RcData(RcData {
+            tmp: tmp.to_string(),
+        })
     }
 
     pub(super) fn raw_text() -> Self {
@@ -467,19 +475,28 @@ impl States {
     }
 
     pub(super) fn tag_name<T: Into<Token>>(token: T) -> Self {
-        States::TagName(TagName { token: token.into() })
+        States::TagName(TagName {
+            token: token.into(),
+        })
     }
 
-    pub(super) fn rc_data_less_than_sign() -> Self {
-        States::RcDataLessThanSign(RcDataLessThanSign {})
+    pub(super) fn rc_data_less_than_sign<TMP: ToString>(tmp: TMP) -> Self {
+        States::RcDataLessThanSign(RcDataLessThanSign {
+            tmp: tmp.to_string(),
+        })
     }
 
-    pub(super) fn rc_data_end_tag_open() -> Self {
-        States::RcDataEndTagOpen(RcDataEndTagOpen {})
+    pub(super) fn rc_data_end_tag_open<TMP: ToString>(tmp: TMP) -> Self {
+        States::RcDataEndTagOpen(RcDataEndTagOpen {
+            tmp: tmp.to_string(),
+        })
     }
 
     pub(super) fn rc_data_end_tag_name<T: Into<Token>, TMP: ToString>(token: T, tmp: TMP) -> Self {
-        States::RcDataEndTagName(RcDataEndTagName { token: token.into(), tmp: tmp.to_string() })
+        States::RcDataEndTagName(RcDataEndTagName {
+            token: token.into(),
+            tmp: tmp.to_string(),
+        })
     }
 
     pub(super) fn raw_text_less_than_sign() -> Self {
@@ -563,43 +580,63 @@ impl States {
     }
 
     pub(super) fn before_attribute_name<T: Into<Token>>(token: T) -> Self {
-        States::BeforeAttributeName(BeforeAttributeName { token: token.into() })
+        States::BeforeAttributeName(BeforeAttributeName {
+            token: token.into(),
+        })
     }
 
     pub(super) fn attribute_name<T: Into<Token>>(token: T) -> Self {
-        States::AttributeName(AttributeName { token: token.into() })
+        States::AttributeName(AttributeName {
+            token: token.into(),
+        })
     }
 
     pub(super) fn after_attribute_name<T: Into<Token>>(token: T) -> Self {
-        States::AfterAttributeName(AfterAttributeName { token: token.into() })
+        States::AfterAttributeName(AfterAttributeName {
+            token: token.into(),
+        })
     }
 
     pub(super) fn before_attribute_value<T: Into<Token>>(token: T) -> Self {
-        States::BeforeAttributeValue(BeforeAttributeValue { token: token.into() })
+        States::BeforeAttributeValue(BeforeAttributeValue {
+            token: token.into(),
+        })
     }
 
     pub(super) fn attribute_value_double_quoted<T: Into<Token>>(token: T) -> Self {
-        States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { token: token.into() })
+        States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted {
+            token: token.into(),
+        })
     }
 
     pub(super) fn attribute_value_single_quoted<T: Into<Token>>(token: T) -> Self {
-        States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { token: token.into() })
+        States::AttributeValueSingleQuoted(AttributeValueSingleQuoted {
+            token: token.into(),
+        })
     }
 
     pub(super) fn attribute_value_unquoted<T: Into<Token>>(token: T) -> Self {
-        States::AttributeValueUnquoted(AttributeValueUnquoted { token: token.into() })
+        States::AttributeValueUnquoted(AttributeValueUnquoted {
+            token: token.into(),
+        })
     }
 
     pub(super) fn after_attribute_value_quoted<T: Into<Token>>(token: T) -> Self {
-        States::AfterAttributeValueQuoted(AfterAttributeValueQuoted { token: token.into() })
+        States::AfterAttributeValueQuoted(AfterAttributeValueQuoted {
+            token: token.into(),
+        })
     }
 
     pub(super) fn self_closing_start_tag<T: Into<Token>>(token: T) -> Self {
-        States::SelfClosingStartTag(SelfClosingStartTag { token: token.into() })
+        States::SelfClosingStartTag(SelfClosingStartTag {
+            token: token.into(),
+        })
     }
 
     pub(super) fn bogus_comment<T: Into<Token>>(token: T) -> Self {
-        States::BogusComment(BogusComment { token: token.into() })
+        States::BogusComment(BogusComment {
+            token: token.into(),
+        })
     }
 
     pub(super) fn markup_declaration_open() -> Self {
@@ -607,19 +644,27 @@ impl States {
     }
 
     pub(super) fn comment_start<T: Into<Token>>(token: T) -> Self {
-        States::CommentStart(CommentStart { token: token.into() })
+        States::CommentStart(CommentStart {
+            token: token.into(),
+        })
     }
 
     pub(super) fn comment_start_dash<T: Into<Token>>(token: T) -> Self {
-        States::CommentStartDash(CommentStartDash { token: token.into() })
+        States::CommentStartDash(CommentStartDash {
+            token: token.into(),
+        })
     }
 
     pub(super) fn comment<T: Into<Token>>(token: T) -> Self {
-        States::Comment(Comment { token: token.into() })
+        States::Comment(Comment {
+            token: token.into(),
+        })
     }
 
     pub(super) fn comment_less_than_sign<T: Into<Token>>(token: T) -> Self {
-        States::CommentLessThanSign(CommentLessThanSign { token: token.into() })
+        States::CommentLessThanSign(CommentLessThanSign {
+            token: token.into(),
+        })
     }
 
     pub(super) fn comment_less_than_sign_bang() -> Self {
@@ -635,15 +680,21 @@ impl States {
     }
 
     pub(super) fn comment_end_dash<T: Into<Token>>(token: T) -> Self {
-        States::CommentEndDash(CommentEndDash { token: token.into() })
+        States::CommentEndDash(CommentEndDash {
+            token: token.into(),
+        })
     }
 
     pub(super) fn comment_end<T: Into<Token>>(token: T) -> Self {
-        States::CommentEnd(CommentEnd { token: token.into() })
+        States::CommentEnd(CommentEnd {
+            token: token.into(),
+        })
     }
 
     pub(super) fn comment_end_bang<T: Into<Token>>(token: T) -> Self {
-        States::CommentEndBang(CommentEndBang { token: token.into() })
+        States::CommentEndBang(CommentEndBang {
+            token: token.into(),
+        })
     }
 
     pub(super) fn doctype() -> Self {
@@ -655,7 +706,9 @@ impl States {
     }
 
     pub(super) fn doctype_name<T: Into<Token>>(token: T) -> Self {
-        States::DoctypeName(DoctypeName { token: token.into() })
+        States::DoctypeName(DoctypeName {
+            token: token.into(),
+        })
     }
 
     pub(super) fn after_doctype_name() -> Self {
@@ -724,20 +777,38 @@ impl States {
         States::CdataSectionEnd(CdataSectionEnd {})
     }
 
-    pub(super) fn character_reference<S: Into<States>, TMP: ToString>(return_state: S, tmp: TMP) -> Self {
-        States::CharacterReference(CharacterReference { return_state: Box::new(return_state.into()), tmp: tmp.to_string() })
+    pub(super) fn character_reference<S: Into<States>, TMP: ToString>(
+        return_state: S,
+        tmp: TMP,
+    ) -> Self {
+        States::CharacterReference(CharacterReference {
+            return_state: Box::new(return_state.into()),
+            tmp: tmp.to_string(),
+        })
     }
 
-    pub(super) fn named_character_reference<TMP: ToString>(return_state: Box<States>, tmp: TMP) -> Self {
-        States::NamedCharacterReference(NamedCharacterReference { return_state, tmp: tmp.to_string() })
+    pub(super) fn named_character_reference<TMP: ToString>(
+        return_state: Box<States>,
+        tmp: TMP,
+    ) -> Self {
+        States::NamedCharacterReference(NamedCharacterReference {
+            return_state,
+            tmp: tmp.to_string(),
+        })
     }
 
     pub(super) fn ambiguous_ampersand(return_state: Box<States>) -> Self {
         States::AmbiguousAmpersand(AmbiguousAmpersand { return_state })
     }
 
-    pub(super) fn numeric_character_reference<TMP: ToString>(return_state: Box<States>, tmp: TMP) -> Self {
-        States::NumericCharacterReference(NumericCharacterReference { return_state, tmp: tmp.to_string() })
+    pub(super) fn numeric_character_reference<TMP: ToString>(
+        return_state: Box<States>,
+        tmp: TMP,
+    ) -> Self {
+        States::NumericCharacterReference(NumericCharacterReference {
+            return_state,
+            tmp: tmp.to_string(),
+        })
     }
 
     pub(super) fn hexadecimal_character_reference_start<TMP: ToString>(
@@ -811,15 +882,15 @@ impl States {
 
         match self {
             Data(state) => state.on_character(input),
-            // RcData(state) => state.on_character(input),
-            // RawText(state) => state.on_character(input),
-            // ScriptData(state) => state.on_character(input),
-            // PlainText(state) => state.on_character(input),
+            RcData(state) => state.on_character(input),
+            RawText(state) => state.on_character(input),
+            ScriptData(state) => state.on_character(input),
+            PlainText(state) => state.on_character(input),
             TagOpen(state) => state.on_character(input),
             EndTagOpen(state) => state.on_character(input),
             TagName(state) => state.on_character(input),
-            // RcDataLessThanSign(state) => state.on_character(input),
-            // RcDataEndTagOpen(state) => state.on_character(input),
+            RcDataLessThanSign(state) => state.on_character(input),
+            RcDataEndTagOpen(state) => state.on_character(input),
             RcDataEndTagName(state) => state.on_character(input),
             // RawTextLessThanSign(state) => state.on_character(input),
             // RawTextEndTagOpen(state) => state.on_character(input),
@@ -851,7 +922,7 @@ impl States {
             AfterAttributeValueQuoted(state) => state.on_character(input),
             SelfClosingStartTag(state) => state.on_character(input),
             BogusComment(state) => state.on_character(input),
-            // MarkupDeclarationOpen(state) => state.on_character(input),
+            // MarkupDeclarationOpen (see on_next_few_characters)
             CommentStart(state) => state.on_character(input),
             CommentStartDash(state) => state.on_character(input),
             Comment(state) => state.on_character(input),
@@ -861,7 +932,7 @@ impl States {
             // CommentLessThanSignBangDashDash(state) => state.on_character(input),
             CommentEndDash(state) => state.on_character(input),
             CommentEnd(state) => state.on_character(input),
-            // CommentEndBang(state) => state.on_character(input),
+            CommentEndBang(state) => state.on_character(input),
             Doctype(state) => state.on_character(input),
             BeforeDoctypeName(state) => state.on_character(input),
             DoctypeName(state) => state.on_character(input),
@@ -882,14 +953,14 @@ impl States {
             // CdataSectionBracket(state) => state.on_character(input),
             // CdataSectionEnd(state) => state.on_character(input),
             CharacterReference(state) => state.on_character(input),
-            // NamedCharacterReference(state) => state.on_character(input),
+            // NamedCharacterReference (see on_possible_character_reference_with_next_char)
             AmbiguousAmpersand(state) => state.on_character(input),
             NumericCharacterReference(state) => state.on_character(input),
             HexadecimalCharacterReferenceStart(state) => state.on_character(input),
             DecimalCharacterReferenceStart(state) => state.on_character(input),
             HexadecimalCharacterReference(state) => state.on_character(input),
             DecimalCharacterReference(state) => state.on_character(input),
-            // NumericCharacterReferenceEnd(state) => state.on_character(input),
+            // NumericCharacterReferenceEnd (see on_advance)
             _ => Err(errors::StateTransitionError::new(self, "Character")).into(),
         }
     }
@@ -970,4 +1041,7 @@ pub(super) struct NextFewCharacters(Option<String>);
 
 // Is this just needed for NamedCharacterReference?
 #[derive(Clone, Debug, PartialEq, From, AsRef)]
-pub(super) struct PossibleCharacterReferenceWithNextChar(pub(super) Option<String>, pub(super) Character);
+pub(super) struct PossibleCharacterReferenceWithNextChar(
+    pub(super) Option<String>,
+    pub(super) Character,
+);

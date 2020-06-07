@@ -9,9 +9,11 @@ use super::{
     TransitionResult,
 };
 
-const U_SOLIDUS: char = '\u{002F}';
+const U_EXCLAMATION_MARK: char = '\u{0021}';
+const U_HYPHEN_MINUS: char = '\u{002D}';
 const U_LESS_THAN_SIGN: char = '\u{003C}';
 const U_REPLACEMENT_CHARACTER: char = '\u{FFFD}';
+const U_SOLIDUS: char = '\u{002F}';
 
 /*
  * Transition Impls
@@ -45,6 +47,124 @@ impl Data {
             Character::Eof => {
                 let mut ret = States::term().into_transition_result();
                 ret.push_emit(Token::Eof);
+                ret
+            }
+        }
+    }
+}
+
+impl RcData {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
+        match c {
+            Character::Char('&') => States::character_reference(self, "").into_transition_result(),
+            Character::Char('<') => {
+                States::rc_data_less_than_sign(self.tmp).into_transition_result()
+            }
+            Character::Null => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret.push_emit(U_REPLACEMENT_CHARACTER);
+                ret
+            }
+            Character::Eof => {
+                let mut ret = States::term().into_transition_result();
+                ret.push_emit(Token::Eof);
+                ret
+            }
+            Character::LineFeed => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_emit('\n');
+                ret
+            }
+            Character::Char(c) => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_emit(c);
+                ret
+            }
+        }
+    }
+}
+
+impl RawText {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
+        match c {
+            Character::Char('<') => States::raw_text_less_than_sign().into_transition_result(),
+            Character::Null => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret.push_emit(U_REPLACEMENT_CHARACTER);
+                ret
+            }
+            Character::Eof => {
+                let mut ret = States::term().into_transition_result();
+                ret.push_emit(Token::Eof);
+                ret
+            }
+            Character::LineFeed => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_emit('\n');
+                ret
+            }
+            Character::Char(c) => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_emit(c);
+                ret
+            }
+        }
+    }
+}
+
+impl ScriptData {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
+        match c {
+            Character::Char('<') => States::script_data_less_than_sign().into_transition_result(),
+            Character::Null => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret.push_emit(U_REPLACEMENT_CHARACTER);
+                ret
+            }
+            Character::Eof => {
+                let mut ret = States::term().into_transition_result();
+                ret.push_emit(Token::Eof);
+                ret
+            }
+            Character::LineFeed => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_emit('\n');
+                ret
+            }
+            Character::Char(c) => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_emit(c);
+                ret
+            }
+        }
+    }
+}
+
+impl PlainText {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
+        match c {
+            Character::Null => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_parse_error(ParseError::UnexpectedNullCharacter);
+                ret.push_emit(U_REPLACEMENT_CHARACTER);
+                ret
+            }
+            Character::Eof => {
+                let mut ret = States::term().into_transition_result();
+                ret.push_emit(Token::Eof);
+                ret
+            }
+            Character::LineFeed => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_emit('\n');
+                ret
+            }
+            Character::Char(c) => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_emit(c);
                 ret
             }
         }
@@ -166,6 +286,41 @@ impl TagName {
     }
 }
 
+impl RcDataLessThanSign {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
+        match c {
+            Character::Char('/') => States::rc_data_end_tag_open("").into_transition_result(),
+            _ => {
+                let mut ret = States::rc_data(self.tmp).into_transition_result();
+                ret.push_emit(U_LESS_THAN_SIGN);
+                ret.set_reconsume();
+                ret
+            }
+        }
+    }
+}
+
+impl RcDataEndTagOpen {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
+        match c {
+            Character::Char(a) if a.is_alphabetic() => {
+                let token: EndTag = Default::default();
+                let mut ret =
+                    States::rc_data_end_tag_name(token, self.tmp).into_transition_result();
+                ret.set_reconsume();
+                ret
+            }
+            _ => {
+                let mut ret = States::rc_data(self.tmp).into_transition_result();
+                ret.push_emit(U_LESS_THAN_SIGN);
+                ret.push_emit(U_SOLIDUS);
+                ret.set_reconsume();
+                ret
+            }
+        }
+    }
+}
+
 impl RcDataEndTagName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         // TODO
@@ -205,10 +360,13 @@ impl RcDataEndTagName {
                 States::from(self).into_transition_result()
             }
             _ => {
-                let mut ret = States::rc_data().into_transition_result();
+                // TODO ownership
+                let tmp = self.tmp.clone();
+
+                let mut ret = States::rc_data(self.tmp).into_transition_result();
                 ret.push_emit(U_LESS_THAN_SIGN);
                 ret.push_emit(U_SOLIDUS);
-                for c in self.tmp.chars() {
+                for c in tmp.chars() {
                     ret.push_emit(c);
                 }
                 ret.set_reconsume();
@@ -680,7 +838,7 @@ impl CommentStartDash {
                 ret
             }
             _ => {
-                self.token.push('-');
+                self.token.push(U_HYPHEN_MINUS);
 
                 let mut ret = States::comment(self.token).into_transition_result();
                 ret.set_reconsume();
@@ -738,7 +896,7 @@ impl CommentEndDash {
                 ret
             }
             _ => {
-                self.token.push('-');
+                self.token.push(U_HYPHEN_MINUS);
 
                 let mut ret = States::comment(self.token).into_transition_result();
                 ret.set_reconsume();
@@ -758,7 +916,7 @@ impl CommentEnd {
             }
             Character::Char('!') => States::comment_end_bang(self.token).into_transition_result(),
             Character::Char('-') => {
-                self.token.push('-');
+                self.token.push(U_HYPHEN_MINUS);
 
                 States::from(self).into_transition_result()
             }
@@ -770,8 +928,43 @@ impl CommentEnd {
                 ret
             }
             _ => {
-                self.token.push('-');
-                self.token.push('-');
+                self.token.push(U_HYPHEN_MINUS);
+                self.token.push(U_HYPHEN_MINUS);
+
+                let mut ret = States::comment(self.token).into_transition_result();
+                ret.set_reconsume();
+                ret
+            }
+        }
+    }
+}
+
+impl CommentEndBang {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
+        match c {
+            Character::Char('-') => {
+                self.token.push(U_HYPHEN_MINUS);
+                self.token.push(U_HYPHEN_MINUS);
+                self.token.push(U_EXCLAMATION_MARK);
+                States::comment_end_dash(self.token).into_transition_result()
+            }
+            Character::Char('>') => {
+                let mut ret = States::data().into_transition_result();
+                ret.push_parse_error(ParseError::IncorrectlyOpenedComment);
+                ret.push_emit(self.token);
+                ret
+            }
+            Character::Eof => {
+                let mut ret = States::term().into_transition_result();
+                ret.push_parse_error(ParseError::EofInComment);
+                ret.push_emit(self.token);
+                ret.push_emit(Token::Eof);
+                ret
+            }
+            _ => {
+                self.token.push(U_HYPHEN_MINUS);
+                self.token.push(U_HYPHEN_MINUS);
+                self.token.push(U_EXCLAMATION_MARK);
 
                 let mut ret = States::comment(self.token).into_transition_result();
                 ret.set_reconsume();
