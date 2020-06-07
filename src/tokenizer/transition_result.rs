@@ -76,16 +76,16 @@ impl TransitionResult {
         self.emit.replace(Vec::new())
     }
 
-    pub(super) fn push_emit(&mut self, token: Token) {
+    pub(super) fn push_emit<T: Into<Token>>(&mut self, token: T) {
         let mut emits = self.emit.take();
-        emits.push(token);
+        emits.push(token.into());
         self.emit.replace(emits);
     }
 
     #[allow(dead_code)]
-    pub(super) fn insert_emit(&mut self, index: usize, token: Token) {
+    pub(super) fn insert_emit<T: Into<Token>>(&mut self, index: usize, token: T) {
         let mut emits = self.emit.take();
-        emits.insert(index, token);
+        emits.insert(index, token.into());
         self.emit.replace(emits);
     }
 

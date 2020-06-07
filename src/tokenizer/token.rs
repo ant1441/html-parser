@@ -118,17 +118,14 @@ impl Token {
         }
     }
 
-    pub(crate) fn is_appropriate_end_tag(&self) -> bool {
+    pub(crate) fn add_attribute<S1: ToString, S2: ToString>(
+        &mut self,
+        name: S1,
+        value: S2,
+    ) {
         match self {
-            Token::EndTag(t) => t.is_appropriate_end_tag(),
-            _ => false,
-        }
-    }
-
-    pub(crate) fn add_attribute(&mut self, name: String, value: String) {
-        match self {
-            Token::StartTag(t) => t.add_attribute(name, value),
-            Token::EndTag(t) => t.add_attribute(name, value),
+            Token::StartTag(t) => t.add_attribute(name.to_string(), value.to_string()),
+            Token::EndTag(t) => t.add_attribute(name.to_string(), value.to_string()),
             _ => panic!("Cannot add_attribute on {:?}", self),
         }
     }
@@ -180,7 +177,20 @@ impl fmt::Display for Token {
     }
 }
 
+impl From<&str> for Token {
+    fn from(s: &str) -> Self {
+        Token::from(s.to_string())
+    }
+}
+
 impl Doctype {
+    pub fn from_char(name: char) -> Self {
+        Doctype {
+            name: Some(name.to_string()),
+            ..Default::default()
+        }
+    }
+
     pub(crate) fn push(&mut self, c: char) {
         if self.name.is_none() {
             panic!("Cannot push to token::Docktype with no name");
@@ -201,6 +211,10 @@ impl Doctype {
 
     pub(crate) fn set_force_quirks(&mut self, f: ForceQuirksFlag) {
         self.force_quirks = f
+    }
+
+    pub(crate) fn is_force_quirks(&self) -> bool {
+        self.force_quirks == ForceQuirksFlag::On
     }
 }
 
@@ -297,16 +311,6 @@ impl EndTag {
 
     pub(crate) fn current_attribute_mut(&mut self) -> Option<&mut Attribute> {
         self.attributes.last_mut()
-    }
-
-    // An appropriate end tag token is an end tag token whose tag name matches
-    // the tag name of the last start tag to have been emitted from this
-    // tokenizer, if any.
-    // If no start tag has been emitted from this tokenizer, then no end tag
-    // token is appropriate.
-    pub(crate) fn is_appropriate_end_tag(&self) -> bool {
-        // TODO
-        true
     }
 
     pub(crate) fn set_self_closing(&mut self, f: SelfClosingFlag) {

@@ -330,15 +330,18 @@ mod test {
         ($name:ident, $html:literal, $($token:expr)*) => {
             #[test]
             fn $name() {
+                let _ = pretty_env_logger::formatted_builder().is_test(true).try_init();
                 let mut f = Cursor::new($html);
-                let mut tokenizer = Tokenizer::new(&mut f, true);
+                let tokenizer = Tokenizer::new(&mut f, false);
 
-                $(
-                    assert_eq!(tokenizer.next().unwrap(), $token);
-                )*
-
-                assert_eq!(tokenizer.next().unwrap(), Token::Eof, "Expected EOF");
-                assert!(tokenizer.next().is_none(), "Extra tokens found!");
+                itertools::assert_equal(tokenizer,
+                    vec![
+                        $(
+                            $token,
+                        )*
+                        Token::Eof
+                    ].into_iter().by_ref()
+                );
             }
         }
     }
@@ -429,6 +432,104 @@ mod test {
             name: "html".to_string(),
             ..Default::default()
         })
+        Token::EndTag(EndTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        open_close_tag_contents,
+        "<html>foo</html>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+        Token::Character('f')
+        Token::Character('o')
+        Token::Character('o')
+        Token::EndTag(EndTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        string,
+        "foo",
+        Token::Character('f')
+        Token::Character('o')
+        Token::Character('o')
+    }
+
+    token_test! {
+        amp_string_invalid_named_char,
+        "<html>&foo</html>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+        Token::Character('&')
+        Token::Character('f')
+        Token::Character('o')
+        Token::Character('o')
+        Token::EndTag(EndTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+    }
+
+
+    token_test! {
+        amp_string_numeric_char_ref,
+        "<html>&#128;</html>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+        Token::Character('€')
+        Token::EndTag(EndTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        amp_string_named_char_ref,
+        "<html>&euro;</html>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+        Token::Character('€')
+        Token::EndTag(EndTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        amp_string_hex_char_ref,
+        "<html>&#x020AC;</html>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+        Token::Character('€')
+        Token::EndTag(EndTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+    }
+
+    token_test! {
+        amp_string_dec_char_ref,
+        "<html>&#8364;</html>",
+        Token::StartTag(StartTag {
+            name: "html".to_string(),
+            ..Default::default()
+        })
+        Token::Character('€')
         Token::EndTag(EndTag {
             name: "html".to_string(),
             ..Default::default()

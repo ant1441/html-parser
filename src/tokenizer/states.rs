@@ -1,6 +1,6 @@
 use derive_more::{AsRef, Deref, DerefMut, Display, From};
 
-use super::{errors, token, Codepoint, TransitionResult};
+use super::{errors, token::Token, Codepoint, TransitionResult};
 
 macro_rules! create_states {
     ($($s:ident,)+) => {
@@ -138,7 +138,7 @@ pub(super) struct EndTagOpen {}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct TagName {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -149,7 +149,7 @@ pub(super) struct RcDataEndTagOpen {}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct RcDataEndTagName {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
     pub(crate) tmp: String,
 }
 
@@ -215,52 +215,52 @@ pub(super) struct ScriptDataDoubleEscapeEnd {}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct BeforeAttributeName {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct AttributeName {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct AfterAttributeName {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct BeforeAttributeValue {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct AttributeValueDoubleQuoted {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct AttributeValueSingleQuoted {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct AttributeValueUnquoted {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct AfterAttributeValueQuoted {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct SelfClosingStartTag {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct BogusComment {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -268,22 +268,22 @@ pub(super) struct MarkupDeclarationOpen {}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct CommentStart {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct CommentStartDash {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct Comment {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct CommentLessThanSign {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -297,17 +297,17 @@ pub(super) struct CommentLessThanSignBangDashDash {}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct CommentEndDash {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct CommentEnd {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct CommentEndBang {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -318,7 +318,7 @@ pub(super) struct BeforeDoctypeName {}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct DoctypeName {
-    pub(crate) token: token::Token,
+    pub(crate) token: Token,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -466,8 +466,8 @@ impl States {
         States::EndTagOpen(EndTagOpen {})
     }
 
-    pub(super) fn tag_name(token: token::Token) -> Self {
-        States::TagName(TagName { token })
+    pub(super) fn tag_name<T: Into<Token>>(token: T) -> Self {
+        States::TagName(TagName { token: token.into() })
     }
 
     pub(super) fn rc_data_less_than_sign() -> Self {
@@ -478,8 +478,8 @@ impl States {
         States::RcDataEndTagOpen(RcDataEndTagOpen {})
     }
 
-    pub(super) fn rc_data_end_tag_name(token: token::Token, tmp: String) -> Self {
-        States::RcDataEndTagName(RcDataEndTagName { token, tmp })
+    pub(super) fn rc_data_end_tag_name<T: Into<Token>, TMP: ToString>(token: T, tmp: TMP) -> Self {
+        States::RcDataEndTagName(RcDataEndTagName { token: token.into(), tmp: tmp.to_string() })
     }
 
     pub(super) fn raw_text_less_than_sign() -> Self {
@@ -562,64 +562,64 @@ impl States {
         States::ScriptDataDoubleEscapeEnd(ScriptDataDoubleEscapeEnd {})
     }
 
-    pub(super) fn before_attribute_name(token: token::Token) -> Self {
-        States::BeforeAttributeName(BeforeAttributeName { token })
+    pub(super) fn before_attribute_name<T: Into<Token>>(token: T) -> Self {
+        States::BeforeAttributeName(BeforeAttributeName { token: token.into() })
     }
 
-    pub(super) fn attribute_name(token: token::Token) -> Self {
-        States::AttributeName(AttributeName { token })
+    pub(super) fn attribute_name<T: Into<Token>>(token: T) -> Self {
+        States::AttributeName(AttributeName { token: token.into() })
     }
 
-    pub(super) fn after_attribute_name(token: token::Token) -> Self {
-        States::AfterAttributeName(AfterAttributeName { token })
+    pub(super) fn after_attribute_name<T: Into<Token>>(token: T) -> Self {
+        States::AfterAttributeName(AfterAttributeName { token: token.into() })
     }
 
-    pub(super) fn before_attribute_value(token: token::Token) -> Self {
-        States::BeforeAttributeValue(BeforeAttributeValue { token })
+    pub(super) fn before_attribute_value<T: Into<Token>>(token: T) -> Self {
+        States::BeforeAttributeValue(BeforeAttributeValue { token: token.into() })
     }
 
-    pub(super) fn attribute_value_double_quoted(token: token::Token) -> Self {
-        States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { token })
+    pub(super) fn attribute_value_double_quoted<T: Into<Token>>(token: T) -> Self {
+        States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { token: token.into() })
     }
 
-    pub(super) fn attribute_value_single_quoted(token: token::Token) -> Self {
-        States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { token })
+    pub(super) fn attribute_value_single_quoted<T: Into<Token>>(token: T) -> Self {
+        States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { token: token.into() })
     }
 
-    pub(super) fn attribute_value_unquoted(token: token::Token) -> Self {
-        States::AttributeValueUnquoted(AttributeValueUnquoted { token })
+    pub(super) fn attribute_value_unquoted<T: Into<Token>>(token: T) -> Self {
+        States::AttributeValueUnquoted(AttributeValueUnquoted { token: token.into() })
     }
 
-    pub(super) fn after_attribute_value_quoted(token: token::Token) -> Self {
-        States::AfterAttributeValueQuoted(AfterAttributeValueQuoted { token })
+    pub(super) fn after_attribute_value_quoted<T: Into<Token>>(token: T) -> Self {
+        States::AfterAttributeValueQuoted(AfterAttributeValueQuoted { token: token.into() })
     }
 
-    pub(super) fn self_closing_start_tag(token: token::Token) -> Self {
-        States::SelfClosingStartTag(SelfClosingStartTag { token })
+    pub(super) fn self_closing_start_tag<T: Into<Token>>(token: T) -> Self {
+        States::SelfClosingStartTag(SelfClosingStartTag { token: token.into() })
     }
 
-    pub(super) fn bogus_comment(token: token::Token) -> Self {
-        States::BogusComment(BogusComment { token })
+    pub(super) fn bogus_comment<T: Into<Token>>(token: T) -> Self {
+        States::BogusComment(BogusComment { token: token.into() })
     }
 
     pub(super) fn markup_declaration_open() -> Self {
         States::MarkupDeclarationOpen(MarkupDeclarationOpen {})
     }
 
-    pub(super) fn comment_start(token: token::Token) -> Self {
-        States::CommentStart(CommentStart { token })
+    pub(super) fn comment_start<T: Into<Token>>(token: T) -> Self {
+        States::CommentStart(CommentStart { token: token.into() })
     }
 
-    pub(super) fn comment_start_dash(token: token::Token) -> Self {
-        States::CommentStartDash(CommentStartDash { token })
+    pub(super) fn comment_start_dash<T: Into<Token>>(token: T) -> Self {
+        States::CommentStartDash(CommentStartDash { token: token.into() })
     }
 
-    pub(super) fn comment(token: token::Token) -> Self {
-        States::Comment(Comment { token })
+    pub(super) fn comment<T: Into<Token>>(token: T) -> Self {
+        States::Comment(Comment { token: token.into() })
     }
 
-    pub(super) fn comment_less_than_sign(token: token::Token) -> Self {
-        States::CommentLessThanSign(CommentLessThanSign { token })
+    pub(super) fn comment_less_than_sign<T: Into<Token>>(token: T) -> Self {
+        States::CommentLessThanSign(CommentLessThanSign { token: token.into() })
     }
 
     pub(super) fn comment_less_than_sign_bang() -> Self {
@@ -634,16 +634,16 @@ impl States {
         States::CommentLessThanSignBangDashDash(CommentLessThanSignBangDashDash {})
     }
 
-    pub(super) fn comment_end_dash(token: token::Token) -> Self {
-        States::CommentEndDash(CommentEndDash { token })
+    pub(super) fn comment_end_dash<T: Into<Token>>(token: T) -> Self {
+        States::CommentEndDash(CommentEndDash { token: token.into() })
     }
 
-    pub(super) fn comment_end(token: token::Token) -> Self {
-        States::CommentEnd(CommentEnd { token })
+    pub(super) fn comment_end<T: Into<Token>>(token: T) -> Self {
+        States::CommentEnd(CommentEnd { token: token.into() })
     }
 
-    pub(super) fn comment_end_bang(token: token::Token) -> Self {
-        States::CommentEndBang(CommentEndBang { token })
+    pub(super) fn comment_end_bang<T: Into<Token>>(token: T) -> Self {
+        States::CommentEndBang(CommentEndBang { token: token.into() })
     }
 
     pub(super) fn doctype() -> Self {
@@ -654,8 +654,8 @@ impl States {
         States::BeforeDoctypeName(BeforeDoctypeName {})
     }
 
-    pub(super) fn doctype_name(token: token::Token) -> Self {
-        States::DoctypeName(DoctypeName { token })
+    pub(super) fn doctype_name<T: Into<Token>>(token: T) -> Self {
+        States::DoctypeName(DoctypeName { token: token.into() })
     }
 
     pub(super) fn after_doctype_name() -> Self {
@@ -724,77 +724,77 @@ impl States {
         States::CdataSectionEnd(CdataSectionEnd {})
     }
 
-    pub(super) fn character_reference(return_state: Box<States>, tmp: String) -> Self {
-        States::CharacterReference(CharacterReference { return_state, tmp })
+    pub(super) fn character_reference<S: Into<States>, TMP: ToString>(return_state: S, tmp: TMP) -> Self {
+        States::CharacterReference(CharacterReference { return_state: Box::new(return_state.into()), tmp: tmp.to_string() })
     }
 
-    pub(super) fn named_character_reference(return_state: Box<States>, tmp: String) -> Self {
-        States::NamedCharacterReference(NamedCharacterReference { return_state, tmp })
+    pub(super) fn named_character_reference<TMP: ToString>(return_state: Box<States>, tmp: TMP) -> Self {
+        States::NamedCharacterReference(NamedCharacterReference { return_state, tmp: tmp.to_string() })
     }
 
     pub(super) fn ambiguous_ampersand(return_state: Box<States>) -> Self {
         States::AmbiguousAmpersand(AmbiguousAmpersand { return_state })
     }
 
-    pub(super) fn numeric_character_reference(return_state: Box<States>, tmp: String) -> Self {
-        States::NumericCharacterReference(NumericCharacterReference { return_state, tmp })
+    pub(super) fn numeric_character_reference<TMP: ToString>(return_state: Box<States>, tmp: TMP) -> Self {
+        States::NumericCharacterReference(NumericCharacterReference { return_state, tmp: tmp.to_string() })
     }
 
-    pub(super) fn hexadecimal_character_reference_start(
+    pub(super) fn hexadecimal_character_reference_start<TMP: ToString>(
         return_state: Box<States>,
-        tmp: String,
+        tmp: TMP,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::HexadecimalCharacterReferenceStart(HexadecimalCharacterReferenceStart {
             return_state,
-            tmp,
+            tmp: tmp.to_string(),
             character_reference_code,
         })
     }
 
-    pub(super) fn decimal_character_reference_start(
+    pub(super) fn decimal_character_reference_start<TMP: ToString>(
         return_state: Box<States>,
-        tmp: String,
+        tmp: TMP,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::DecimalCharacterReferenceStart(DecimalCharacterReferenceStart {
             return_state,
-            tmp,
+            tmp: tmp.to_string(),
             character_reference_code,
         })
     }
 
-    pub(super) fn hexadecimal_character_reference(
+    pub(super) fn hexadecimal_character_reference<TMP: ToString>(
         return_state: Box<States>,
-        tmp: String,
+        tmp: TMP,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::HexadecimalCharacterReference(HexadecimalCharacterReference {
             return_state,
-            tmp,
+            tmp: tmp.to_string(),
             character_reference_code,
         })
     }
 
-    pub(super) fn decimal_character_reference(
+    pub(super) fn decimal_character_reference<TMP: ToString>(
         return_state: Box<States>,
-        tmp: String,
+        tmp: TMP,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::DecimalCharacterReference(DecimalCharacterReference {
-            tmp,
+            tmp: tmp.to_string(),
             return_state,
             character_reference_code,
         })
     }
 
-    pub(super) fn numeric_character_reference_end(
+    pub(super) fn numeric_character_reference_end<TMP: ToString>(
         return_state: Box<States>,
-        tmp: String,
+        tmp: TMP,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::NumericCharacterReferenceEnd(NumericCharacterReferenceEnd {
-            tmp,
+            tmp: tmp.to_string(),
             return_state,
             character_reference_code,
         })
