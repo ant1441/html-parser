@@ -1,9 +1,9 @@
 // use derive_more::{AsRef, Deref, DerefMut, Display, From};
 use derive_more::{Display, From};
 
-use crate::tokenizer::Token;
+use crate::{dom, tokenizer::Token};
 
-use super::TransitionResult;
+use super::{errors, TransitionResult};
 
 macro_rules! create_states {
     ($($s:ident,)+) => {
@@ -235,46 +235,51 @@ impl States {
 
     // Transitions
 
-    pub(super) fn on_token(self, input: Token) -> TransitionResult {
+    pub(super) fn on_token(self, document: &mut dom::Document, input: &Token) -> TransitionResult {
         use States::*;
 
         match self {
-            Initial(state) => state.on_token(input),
-            // BeforeHtml(state) => state.on_token(input),
-            // BeforeHead(state) => state.on_token(input),
-            // InHead(state) => state.on_token(input),
-            // InHeadNoscript(state) => state.on_token(input),
-            // AfterHead(state) => state.on_token(input),
-            // InBody(state) => state.on_token(input),
-            // Text(state) => state.on_token(input),
-            // InTable(state) => state.on_token(input),
-            // InTableText(state) => state.on_token(input),
-            // InCaption(state) => state.on_token(input),
-            // InColumnGroup(state) => state.on_token(input),
-            // InTableBody(state) => state.on_token(input),
-            // InRow(state) => state.on_token(input),
-            // InCell(state) => state.on_token(input),
-            // InSelect(state) => state.on_token(input),
-            // InSelectInTable(state) => state.on_token(input),
-            // InTemplate(state) => state.on_token(input),
-            // AfterBody(state) => state.on_token(input),
-            // InFrameset(state) => state.on_token(input),
-            // AfterFrameset(state) => state.on_token(input),
-            // AfterAfterBody(state) => state.on_token(input),
-            // AfterAfterFrameset(state) => state.on_token(input),
-            _ => {
-                todo!();
-                //Err(errors::StateTransitionError::new(self, "Token")).into(),
-            }
+            Initial(state) => state.on_token(document, input),
+            BeforeHtml(state) => state.on_token(document, input),
+            BeforeHead(state) => state.on_token(document, input),
+            InHead(state) => state.on_token(document, input),
+            // InHeadNoscript(state) => state.on_token(document, input),
+            AfterHead(state) => state.on_token(document, input),
+            InBody(state) => state.on_token(document, input),
+            // Text(state) => state.on_token(document, input),
+            // InTable(state) => state.on_token(document, input),
+            // InTableText(state) => state.on_token(document, input),
+            // InCaption(state) => state.on_token(document, input),
+            // InColumnGroup(state) => state.on_token(document, input),
+            // InTableBody(state) => state.on_token(document, input),
+            // InRow(state) => state.on_token(document, input),
+            // InCell(state) => state.on_token(document, input),
+            // InSelect(state) => state.on_token(document, input),
+            // InSelectInTable(state) => state.on_token(document, input),
+            // InTemplate(state) => state.on_token(document, input),
+            AfterBody(state) => state.on_token(document, input),
+            // InFrameset(state) => state.on_token(document, input),
+            // AfterFrameset(state) => state.on_token(document, input),
+            AfterAfterBody(state) => state.on_token(document, input),
+            // AfterAfterFrameset(state) => state.on_token(document, input),
+            _ => Err(errors::StateTransitionError::new(self, "Token")).into(),
         }
     }
 
-    pub(super) fn execute(self, input: StateMachineMessages) -> TransitionResult {
+    pub(super) fn execute(
+        self,
+        document: &mut dom::Document,
+        input: StateMachineMessages,
+    ) -> TransitionResult {
         use StateMachineMessages::*;
 
         match input {
-            Token(token) => self.on_token(token),
+            Token(token) => self.on_token(document, token),
         }
+    }
+
+    pub(super) fn into_transition_result(self) -> TransitionResult {
+        TransitionResult::from_state(self)
     }
 }
 
@@ -285,6 +290,6 @@ impl Default for States {
 }
 
 #[derive(Clone, Debug, PartialEq, From)]
-pub(super) enum StateMachineMessages {
-    Token(Token),
+pub(super) enum StateMachineMessages<'t> {
+    Token(&'t Token),
 }

@@ -2,10 +2,10 @@
 
 use std::io;
 
-use log::trace;
+use log::debug;
 
 use crate::{
-    dom::Document,
+    dom::{self, Document},
     tokenizer::{Token, Tokenizer},
 };
 
@@ -13,7 +13,6 @@ mod errors;
 mod states;
 mod transition_result;
 mod transitions;
-mod force_quirks_check;
 
 use states::States;
 use transition_result::TransitionResult;
@@ -27,9 +26,10 @@ where
     tokenizer: Tokenizer<R>,
 
     insertion_mode: Option<States>,
+    reprocess: bool,
     last_token: Option<Token>,
 
-    stack_of_open_elements: Vec<()>,
+    open_elements: Vec<dom::Node>,
 }
 
 impl<R> Parser<R>
@@ -45,8 +45,9 @@ where
             tokenizer,
 
             insertion_mode: Some(States::new()),
+            reprocess: false,
             last_token: None,
-            stack_of_open_elements: vec![],
+            open_elements: Vec::new(),
         }
     }
 
@@ -54,16 +55,34 @@ where
         loop {
             let insertion_mode = self.insertion_mode.take().unwrap();
 
-            trace!("Insertion Mode: {:?}", insertion_mode);
+            debug!(
+                "State ({}): {:?}",
+                if self.reprocess { "R" } else { "-" },
+                insertion_mode
+            );
             let res = match insertion_mode {
                 States::Term(_) => return,
                 _ => {
-                    let token = self.tokenizer.next().unwrap();
+                    let token = if !self.reprocess {
+                        self.tokenizer.next().unwrap()
+                    } else {
+                        self.last_token.take().unwrap()
+                    };
                     // self.last_token = Some(token);
-                    insertion_mode.on_token(token)
+                    let ret = insertion_mode.on_token(&mut self.document, &token);
+                    self.last_token = Some(token);
+                    ret
                 }
             };
-            trace!("Result: {:?}", res);
+
+            if res.is_err() {
+                let next_state_error = res.state().unwrap_err();
+                // TODO return err?
+                panic!("Parser error: {}", next_state_error);
+            }
+
+            self.reprocess = res.reprocess();
+            self.insertion_mode = Some(res.state().unwrap());
         }
     }
 }

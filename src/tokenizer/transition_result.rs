@@ -3,6 +3,8 @@
 
 use std::cell::Cell;
 
+use log::warn;
+
 use super::{
     errors::{Error, ParseError, Result},
     Emit, States, Token,
@@ -91,10 +93,10 @@ impl TransitionResult {
 
     pub(super) fn push_parse_error(&mut self, err: ParseError) {
         // TODO: Handle parse errors
-        println!("Parse Error: {}", err);
+        warn!("Parse Error: {}", err);
     }
 
     pub(super) fn insert_parse_error(&mut self, _index: usize, err: ParseError) {
-        println!("Parse Error: {}", err);
+        warn!("Parse Error: {}", err);
     }
 }

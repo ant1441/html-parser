@@ -1,4 +1,4 @@
-use log::trace;
+use log::{trace, warn};
 
 use super::{
     codepoint,
@@ -329,6 +329,7 @@ impl RcDataEndTagName {
         // tokenizer, if any.
         // If no start tag has been emitted from this tokenizer, then no end tag
         // token is appropriate.
+        warn!("[TODO] is_appropriate_end_tag");
         let is_appropriate_end_tag = true;
         match c {
             Character::Char('\t')
@@ -456,6 +457,7 @@ impl AttributeName {
 
     #[allow(unreachable_code, unused_variables)]
     fn check_duplicate_attribuite(&mut self) {
+        warn!("[TODO] Check duplicate attribute");
         // TODO
         if false {
             //if let Token::StartTag(tag) = self.token {

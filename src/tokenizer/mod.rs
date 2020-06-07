@@ -266,7 +266,7 @@ where
             }
 
             let state = self.state.take().unwrap();
-            trace!(
+            debug!(
                 "State ({}): {:?}",
                 if self.reconsume { "R" } else { "-" },
                 state

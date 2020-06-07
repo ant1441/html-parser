@@ -1,5 +1,7 @@
 // Put here as this code breaks rustfmt
-pub(super) fn force_quirks_check(
+//
+// TODO: The system identifier and public identifier strings must be compared to the values given in the lists above in an ASCII case-insensitive manner
+pub(super) fn quirks_check(
     name: &str,
     public_id: &str,
     system_id: &str,
@@ -71,4 +73,15 @@ pub(super) fn force_quirks_check(
         || public_id.starts_with("-//WebTechs//DTD Mozilla HTML//")
         || (!system_id_present && public_id.starts_with("-//W3C//DTD HTML 4.01 Frameset//"))
         || (!system_id_present && public_id.starts_with("-//W3C//DTD HTML 4.01 Transitional//"))
+}
+
+
+pub(super) fn limited_quirks_check(
+    public_id: &str,
+    system_id_present: bool,
+) -> bool {
+    public_id.starts_with("-//W3C//DTD XHTML 1.0 Frameset//")
+        || public_id.starts_with("-//W3C//DTD XHTML 1.0 Transitional//")
+        || (system_id_present && public_id.starts_with("-//W3C//DTD HTML 4.01 Frameset//"))
+        || (system_id_present && public_id.starts_with("-//W3C//DTD HTML 4.01 Transitional//"))
 }
