@@ -1,24 +1,28 @@
 use crate::{
     dom,
-    parser::{states::*, TransitionResult},
+    parser::{states::*, Parser, TransitionResult},
     tokenizer::Token,
 };
+use std::io;
 
 use super::parse_error;
 
 impl BeforeHead {
-    pub(in crate::parser) fn on_token(
+    pub(in crate::parser) fn on_token<R>(
         self,
-        document: &mut dom::Document,
+        parser: &mut Parser<R>,
         t: &Token,
-    ) -> TransitionResult {
+    ) -> TransitionResult
+    where
+        R: io::Read + io::Seek,
+    {
         match t {
             Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
                 States::from(self).into_transition_result()
             }
             Token::Comment(comment) => {
                 let node = dom::Comment::new(comment.clone());
-                document.push(node);
+                parser.document.push(node);
                 States::from(self).into_transition_result()
             }
             Token::Doctype(_) => {
@@ -50,7 +54,7 @@ Switch the insertion mode to \"in head\". "
                 // Reprocess the current token.
 
                 let node = dom::Element::new("head".to_string());
-                document.set_head(node);
+                parser.document.set_head(node);
 
                 let mut ret = States::in_head().into_transition_result();
                 ret.set_reprocess();

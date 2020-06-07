@@ -2,7 +2,7 @@
 
 use std::io;
 
-use log::debug;
+use log::{debug, trace};
 
 use crate::{
     dom::{self, Document},
@@ -37,7 +37,7 @@ where
     R: io::Read + io::Seek,
 {
     pub fn new(r: R) -> Self {
-        let document = Document::new();
+        let document: Document = Default::default();
         let tokenizer = Tokenizer::new(r, false);
 
         Parser {
@@ -60,6 +60,7 @@ where
                 if self.reprocess { "R" } else { "-" },
                 insertion_mode
             );
+            trace!("Document: {:?}", self.document);
             let res = match insertion_mode {
                 States::Term(_) => return,
                 _ => {
@@ -69,7 +70,7 @@ where
                         self.last_token.take().unwrap()
                     };
                     // self.last_token = Some(token);
-                    let ret = insertion_mode.on_token(&mut self.document, &token);
+                    let ret = insertion_mode.on_token(self, &token);
                     self.last_token = Some(token);
                     ret
                 }

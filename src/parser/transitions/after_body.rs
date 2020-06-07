@@ -2,18 +2,22 @@ use log::warn;
 
 use crate::{
     dom,
-    parser::{states::*, TransitionResult},
+    parser::{states::*, Parser, TransitionResult},
     tokenizer::Token,
 };
+use std::io;
 
 use super::parse_error;
 
 impl AfterBody {
-    pub(in crate::parser) fn on_token(
+    pub(in crate::parser) fn on_token<R>(
         self,
-        _document: &mut dom::Document,
+        _parser: &mut Parser<R>,
         t: &Token,
-    ) -> TransitionResult {
+    ) -> TransitionResult
+    where
+        R: io::Read + io::Seek,
+    {
         match t {
             Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
                 todo!("AfterBody::on_token('\\w')");

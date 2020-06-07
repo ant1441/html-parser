@@ -1,7 +1,8 @@
-// use derive_more::{AsRef, Deref, DerefMut, Display, From};
+use std::io;
+
 use derive_more::{Display, From};
 
-use crate::{dom, tokenizer::Token};
+use crate::{parser::Parser, tokenizer::Token};
 
 use super::{errors, TransitionResult};
 
@@ -235,46 +236,56 @@ impl States {
 
     // Transitions
 
-    pub(super) fn on_token(self, document: &mut dom::Document, input: &Token) -> TransitionResult {
+    pub(super) fn on_token<R>(
+        self,
+        parser: &mut crate::parser::Parser<R>,
+        input: &Token,
+    ) -> TransitionResult
+    where
+        R: io::Read + io::Seek,
+    {
         use States::*;
 
         match self {
-            Initial(state) => state.on_token(document, input),
-            BeforeHtml(state) => state.on_token(document, input),
-            BeforeHead(state) => state.on_token(document, input),
-            InHead(state) => state.on_token(document, input),
-            // InHeadNoscript(state) => state.on_token(document, input),
-            AfterHead(state) => state.on_token(document, input),
-            InBody(state) => state.on_token(document, input),
-            // Text(state) => state.on_token(document, input),
-            // InTable(state) => state.on_token(document, input),
-            // InTableText(state) => state.on_token(document, input),
-            // InCaption(state) => state.on_token(document, input),
-            // InColumnGroup(state) => state.on_token(document, input),
-            // InTableBody(state) => state.on_token(document, input),
-            // InRow(state) => state.on_token(document, input),
-            // InCell(state) => state.on_token(document, input),
-            // InSelect(state) => state.on_token(document, input),
-            // InSelectInTable(state) => state.on_token(document, input),
-            // InTemplate(state) => state.on_token(document, input),
-            AfterBody(state) => state.on_token(document, input),
-            // InFrameset(state) => state.on_token(document, input),
-            // AfterFrameset(state) => state.on_token(document, input),
-            AfterAfterBody(state) => state.on_token(document, input),
-            // AfterAfterFrameset(state) => state.on_token(document, input),
+            Initial(state) => state.on_token(parser, input),
+            BeforeHtml(state) => state.on_token(parser, input),
+            BeforeHead(state) => state.on_token(parser, input),
+            InHead(state) => state.on_token(parser, input),
+            // InHeadNoscript(state) => state.on_token(parser, input),
+            AfterHead(state) => state.on_token(parser, input),
+            InBody(state) => state.on_token(parser, input),
+            // Text(state) => state.on_token(parser, input),
+            // InTable(state) => state.on_token(parser, input),
+            // InTableText(state) => state.on_token(parser, input),
+            // InCaption(state) => state.on_token(parser, input),
+            // InColumnGroup(state) => state.on_token(parser, input),
+            // InTableBody(state) => state.on_token(parser, input),
+            // InRow(state) => state.on_token(parser, input),
+            // InCell(state) => state.on_token(parser, input),
+            // InSelect(state) => state.on_token(parser, input),
+            // InSelectInTable(state) => state.on_token(parser, input),
+            // InTemplate(state) => state.on_token(parser, input),
+            AfterBody(state) => state.on_token(parser, input),
+            // InFrameset(state) => state.on_token(parser, input),
+            // AfterFrameset(state) => state.on_token(parser, input),
+            AfterAfterBody(state) => state.on_token(parser, input),
+            // AfterAfterFrameset(state) => state.on_token(parser, input),
             _ => Err(errors::StateTransitionError::new(self, "Token")).into(),
         }
     }
 
-    pub(super) fn execute(
+    pub(super) fn execute<R>(
         self,
-        document: &mut dom::Document,
+        parser: &mut Parser<R>,
         input: StateMachineMessages,
-    ) -> TransitionResult {
+    ) -> TransitionResult
+    where
+        R: io::Read + io::Seek,
+    {
         use StateMachineMessages::*;
 
         match input {
-            Token(token) => self.on_token(document, token),
+            Token(token) => self.on_token(parser, token),
         }
     }
 

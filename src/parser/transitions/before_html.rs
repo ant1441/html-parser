@@ -1,13 +1,22 @@
+use std::io;
+
 use crate::{
     dom,
-    parser::{states::*, TransitionResult},
+    parser::{states::*, Parser, TransitionResult},
     tokenizer::Token,
 };
 
 use super::parse_error;
 
 impl BeforeHtml {
-    pub(in crate::parser) fn on_token(self, document: &mut dom::Document, t: &Token) -> TransitionResult {
+    pub(in crate::parser) fn on_token<R>(
+        self,
+        parser: &mut Parser<R>,
+        t: &Token,
+    ) -> TransitionResult
+    where
+        R: io::Read + io::Seek,
+    {
         match t {
             Token::Doctype(_) => {
                 parse_error("BeforeHtml::on_token(Doctype)");
@@ -18,7 +27,7 @@ impl BeforeHtml {
             }
             Token::StartTag(tag) if tag.name == "html" => {
                 let node = dom::Element::new(tag.name.clone());
-                document.push(node);
+                parser.document.push(node);
 
                 // TODO: Put this element in the stack of open elements.
 

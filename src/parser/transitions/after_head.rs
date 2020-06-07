@@ -1,17 +1,21 @@
 use crate::{
     dom,
-    parser::{states::*, TransitionResult},
+    parser::{states::*, Parser, TransitionResult},
     tokenizer::Token,
 };
+use std::io;
 
 use super::parse_error;
 
 impl AfterHead {
-    pub(in crate::parser) fn on_token(
+    pub(in crate::parser) fn on_token<R>(
         self,
-        document: &mut dom::Document,
+        parser: &mut Parser<R>,
         t: &Token,
-    ) -> TransitionResult {
+    ) -> TransitionResult
+    where
+        R: io::Read + io::Seek,
+    {
         match t {
             Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
                 todo!("AfterHead::on_token('\\w') - Insert the character.");
@@ -19,7 +23,7 @@ impl AfterHead {
             }
             Token::Comment(comment) => {
                 let node = dom::Comment::new(comment.clone());
-                document.push(node);
+                parser.document.push(node);
                 States::from(self).into_transition_result()
             }
             Token::Doctype(_) => {
@@ -58,7 +62,7 @@ impl AfterHead {
             {
                 // Insert an HTML element for a "body" start tag token with no attributes.
                 let node = dom::Element::new("body".to_string());
-                document.push(node);
+                parser.document.push(node);
 
                 let mut ret = States::in_body().into_transition_result();
                 ret.set_reprocess();

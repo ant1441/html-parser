@@ -1,24 +1,28 @@
 use crate::{
     dom,
-    parser::{states::*, TransitionResult},
+    parser::{states::*, Parser, TransitionResult},
     tokenizer::Token,
 };
+use std::io;
 
 use super::parse_error;
 
 impl Initial {
-    pub(in crate::parser) fn on_token(
+    pub(in crate::parser) fn on_token<R>(
         self,
-        document: &mut dom::Document,
+        parser: &mut Parser<R>,
         t: &Token,
-    ) -> TransitionResult {
+    ) -> TransitionResult
+    where
+        R: io::Read + io::Seek,
+    {
         match t {
             Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
                 States::from(self).into_transition_result()
             }
             Token::Comment(comment) => {
                 let node = dom::Comment::new(comment.clone());
-                document.push(node);
+                parser.document.push(node);
                 States::from(self).into_transition_result()
             }
             Token::Doctype(d) => {
@@ -56,16 +60,16 @@ impl Initial {
                     is_force_quirks,
                     system_id_present,
                 ) {
-                    document.set_mode("quirks");
+                    parser.document.set_mode("quirks");
                 } else if super::force_quirks_check::limited_quirks_check(
                     &public_id,
                     system_id_present,
                 ) {
-                    document.set_mode("limited-quirks");
+                    parser.document.set_mode("limited-quirks");
                 }
 
                 let document_type = dom::DocumentType::new(name, public_id, system_id);
-                document.add_document_type(document_type);
+                parser.document.add_document_type(document_type);
 
                 States::before_html().into_transition_result()
             }

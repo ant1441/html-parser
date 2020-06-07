@@ -2,18 +2,22 @@ use log::warn;
 
 use crate::{
     dom,
-    parser::{states::*, TransitionResult},
+    parser::{states::*, Parser, TransitionResult},
     tokenizer::Token,
 };
+use std::io;
 
 use super::parse_error;
 
 impl InBody {
-    pub(in crate::parser) fn on_token(
+    pub(in crate::parser) fn on_token<R>(
         self,
-        document: &mut dom::Document,
+        parser: &mut Parser<R>,
         t: &Token,
-    ) -> TransitionResult {
+    ) -> TransitionResult
+    where
+        R: io::Read + io::Seek,
+    {
         match t {
             Token::Character('\0') => {
                 parse_error("InBody::on_token(\\0)");
@@ -28,7 +32,7 @@ impl InBody {
             }
             Token::Comment(comment) => {
                 let node = dom::Comment::new(comment.clone());
-                document.push(node);
+                parser.document.push(node);
                 States::from(self).into_transition_result()
             }
             Token::Doctype(_) => {

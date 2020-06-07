@@ -1,17 +1,21 @@
 use crate::{
     dom,
-    parser::{states::*, TransitionResult},
+    parser::{states::*, Parser, TransitionResult},
     tokenizer::Token,
 };
+use std::io;
 
 use super::parse_error;
 
 impl InHead {
-    pub(in crate::parser) fn on_token(
+    pub(in crate::parser) fn on_token<R>(
         self,
-        document: &mut dom::Document,
+        parser: &mut Parser<R>,
         t: &Token,
-    ) -> TransitionResult {
+    ) -> TransitionResult
+    where
+        R: io::Read + io::Seek,
+    {
         match t {
             Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
                 todo!("InHead::on_token('\\w') - Insert the character.");
@@ -19,7 +23,7 @@ impl InHead {
             }
             Token::Comment(comment) => {
                 let node = dom::Comment::new(comment.clone());
-                document.push(node);
+                parser.document.push(node);
                 States::from(self).into_transition_result()
             }
             Token::Doctype(_) => {
