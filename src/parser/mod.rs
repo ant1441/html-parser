@@ -5,7 +5,7 @@ use std::io;
 use log::trace;
 
 use crate::{
-    document::Document,
+    dom::Document,
     tokenizer::{Token, Tokenizer},
 };
 
@@ -13,6 +13,7 @@ mod errors;
 mod states;
 mod transition_result;
 mod transitions;
+mod force_quirks_check;
 
 use states::States;
 use transition_result::TransitionResult;
@@ -37,7 +38,7 @@ where
 {
     pub fn new(r: R) -> Self {
         let document = Document::new();
-        let tokenizer = Tokenizer::new(r, true);
+        let tokenizer = Tokenizer::new(r, false);
 
         Parser {
             document,

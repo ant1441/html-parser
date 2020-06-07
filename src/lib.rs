@@ -1,8 +1,31 @@
 mod tokenizer;
 mod parser;
-mod document;
 mod dom;
 
 pub use tokenizer::Tokenizer;
 pub use parser::Parser;
-pub use document::Document;
+
+
+// NOTES
+/*
+
+
+#[derive(
+    AsRef,
+    Clone,
+    Constructor,
+    Copy,
+    Debug,
+    Default,
+    Deref,
+    DerefMut,
+    Deserialize,
+    Display,
+    Eq,
+    From,
+    Hash,
+    PartialEq,
+    Serialize
+)]
+
+*/
