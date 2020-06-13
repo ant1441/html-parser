@@ -9,11 +9,28 @@ use super::{
     TransitionResult,
 };
 
-const U_EXCLAMATION_MARK: char = '\u{0021}';
-const U_HYPHEN_MINUS: char = '\u{002D}';
-const U_LESS_THAN_SIGN: char = '\u{003C}';
-const U_REPLACEMENT_CHARACTER: char = '\u{FFFD}';
-const U_SOLIDUS: char = '\u{002F}';
+const U_AMPERSAND: char = '\u{0026}'; // '&'
+const U_APOSTROPHE: char = '\u{0027}'; // '\''
+const U_CHARACTER_TABULATION: char = '\u{0009}'; // '\t'
+const U_EQUALS_SIGN: char = '\u{003D}'; // '='
+const U_EXCLAMATION_MARK: char = '\u{0021}'; // '!'
+const U_FORM_FEED: char = '\u{000C}'; // '\x0c'
+const U_GRAVE_ACCENT: char = '\u{0060}'; // '`'
+const U_GREATER_THAN_SIGN: char = '\u{003E}'; // '>'
+const U_HYPHEN_MINUS: char = '\u{002D}'; // '-'
+const U_LATIN_CAPITAL_LETTER_X: char = '\u{0058}'; // 'X'
+const U_LATIN_SMALL_LETTER_X: char = '\u{0078}'; // 'x'
+const U_LESS_THAN_SIGN: char = '\u{003C}'; // '<'
+const U_LINE_FEED: char = '\u{000A}'; // '\n'
+const U_NULL: char = '\u{0000}'; // '\0'
+const U_NUMBER_SIGN: char = '\u{0023}'; // '#'
+const U_QUESTION_MARK: char = '\u{003F}'; // '?'
+const U_QUOTATION_MARK: char = '\u{0022}'; // '"'
+const U_REPLACEMENT_CHARACTER: char = '\u{FFFD}'; // '�'
+const U_SEMICOLON: char = '\u{003B}'; // ';'
+const U_SOLIDUS: char = '\u{002F}'; // '/'
+const U_SPACE: char = '\u{0020}'; // ' '
+
 /*
  * Transition Impls
  */
@@ -23,13 +40,15 @@ const U_SOLIDUS: char = '\u{002F}';
 impl Data {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('&') => States::character_reference(self, "").into_transition_result(),
-            Character::Char('<') => States::tag_open().into_transition_result(),
-            Character::Char('\0') => {
+            Character::Char(U_AMPERSAND) => {
+                States::character_reference(self, "").into_transition_result()
+            }
+            Character::Char(U_LESS_THAN_SIGN) => States::tag_open().into_transition_result(),
+            Character::Char(U_NULL) => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 // Not sure if this should be NULL
-                ret.push_emit('\0');
+                ret.push_emit(U_NULL);
                 ret
             }
             Character::Eof => {
@@ -49,11 +68,13 @@ impl Data {
 impl RcData {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('&') => States::character_reference(self, "").into_transition_result(),
-            Character::Char('<') => {
+            Character::Char(U_AMPERSAND) => {
+                States::character_reference(self, "").into_transition_result()
+            }
+            Character::Char(U_LESS_THAN_SIGN) => {
                 States::rc_data_less_than_sign(self.tmp).into_transition_result()
             }
-            Character::Char('\0') => {
+            Character::Char(U_NULL) => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret.push_emit(U_REPLACEMENT_CHARACTER);
@@ -76,8 +97,10 @@ impl RcData {
 impl RawText {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('<') => States::raw_text_less_than_sign().into_transition_result(),
-            Character::Char('\0') => {
+            Character::Char(U_LESS_THAN_SIGN) => {
+                States::raw_text_less_than_sign().into_transition_result()
+            }
+            Character::Char(U_NULL) => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret.push_emit(U_REPLACEMENT_CHARACTER);
@@ -100,8 +123,10 @@ impl RawText {
 impl ScriptData {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('<') => States::script_data_less_than_sign().into_transition_result(),
-            Character::Char('\0') => {
+            Character::Char(U_LESS_THAN_SIGN) => {
+                States::script_data_less_than_sign().into_transition_result()
+            }
+            Character::Char(U_NULL) => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret.push_emit(U_REPLACEMENT_CHARACTER);
@@ -124,7 +149,7 @@ impl ScriptData {
 impl PlainText {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\0') => {
+            Character::Char(U_NULL) => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret.push_emit(U_REPLACEMENT_CHARACTER);
@@ -147,15 +172,17 @@ impl PlainText {
 impl TagOpen {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('!') => States::markup_declaration_open().into_transition_result(),
-            Character::Char('/') => States::end_tag_open().into_transition_result(),
+            Character::Char(U_EXCLAMATION_MARK) => {
+                States::markup_declaration_open().into_transition_result()
+            }
+            Character::Char(U_SOLIDUS) => States::end_tag_open().into_transition_result(),
             Character::Char(a) if a.is_alphabetic() => {
                 let token: StartTag = Default::default();
                 let mut ret = States::tag_name(token).into_transition_result();
                 ret.set_reconsume();
                 ret
             }
-            Character::Char('?') => {
+            Character::Char(U_QUESTION_MARK) => {
                 let mut ret = States::bogus_comment("").into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedQuestionMarkInsteadOfTagName);
                 ret.set_reconsume();
@@ -188,7 +215,7 @@ impl EndTagOpen {
                 ret.set_reconsume();
                 ret
             }
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_parse_error(ParseError::MissingEndTagName);
                 ret
@@ -218,16 +245,16 @@ impl TagName {
             _ => unreachable!("TagName state entered with a none Tag Token"),
         };
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ') => {
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE) => {
                 States::before_attribute_name(self.token).into_transition_result()
             }
-            Character::Char('/') => {
+            Character::Char(U_SOLIDUS) => {
                 States::self_closing_start_tag(self.token).into_transition_result()
             }
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -237,7 +264,7 @@ impl TagName {
 
                 States::from(self).into_transition_result()
             }
-            Character::Char('\0') => {
+            Character::Char(U_NULL) => {
                 self.token.push(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -262,7 +289,7 @@ impl TagName {
 impl RcDataLessThanSign {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('/') => States::rc_data_end_tag_open("").into_transition_result(),
+            Character::Char(U_SOLIDUS) => States::rc_data_end_tag_open("").into_transition_result(),
             _ => {
                 let mut ret = States::rc_data(self.tmp).into_transition_result();
                 ret.push_emit(U_LESS_THAN_SIGN);
@@ -297,18 +324,18 @@ impl RcDataEndTagOpen {
 impl RcDataEndTagName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ')
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE)
                 if self.is_appropriate_end_tag_token() =>
             {
                 States::before_attribute_name(self.token).into_transition_result()
             }
-            Character::Char('/') if self.is_appropriate_end_tag_token() => {
+            Character::Char(U_SOLIDUS) if self.is_appropriate_end_tag_token() => {
                 States::self_closing_start_tag(self.token).into_transition_result()
             }
-            Character::Char('>') if self.is_appropriate_end_tag_token() => {
+            Character::Char(U_GREATER_THAN_SIGN) if self.is_appropriate_end_tag_token() => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -362,16 +389,16 @@ impl RcDataEndTagName {
 impl BeforeAttributeName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ') => States::from(self).into_transition_result(),
-            Character::Char('/') | Character::Char('>') | Character::Eof => {
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE) => States::from(self).into_transition_result(),
+            Character::Char(U_SOLIDUS) | Character::Char(U_GREATER_THAN_SIGN) | Character::Eof => {
                 let mut ret = States::after_attribute_name(self.token).into_transition_result();
                 ret.set_reconsume();
                 ret
             }
-            Character::Char('=') => {
+            Character::Char(U_EQUALS_SIGN) => {
                 self.token.add_attribute("=", "");
                 let mut ret = States::attribute_name(self.token).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedEqualsSignBeforeAttributeName);
@@ -390,12 +417,12 @@ impl BeforeAttributeName {
 impl AttributeName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ')
-            | Character::Char('/')
-            | Character::Char('>')
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE)
+            | Character::Char(U_SOLIDUS)
+            | Character::Char(U_GREATER_THAN_SIGN)
             | Character::Eof => {
                 self.check_duplicate_attribuite();
 
@@ -403,7 +430,7 @@ impl AttributeName {
                 ret.set_reconsume();
                 ret
             }
-            Character::Char('=') => {
+            Character::Char(U_EQUALS_SIGN) => {
                 self.check_duplicate_attribuite();
 
                 States::before_attribute_value(self.token).into_transition_result()
@@ -417,7 +444,7 @@ impl AttributeName {
 
                 States::from(self).into_transition_result()
             }
-            Character::Char('\0') => {
+            Character::Char(U_NULL) => {
                 let attribute = self
                     .token
                     .current_attribute_mut()
@@ -437,7 +464,7 @@ impl AttributeName {
 
                 let mut ret = States::from(self).into_transition_result();
 
-                if c == '"' || c == '\'' || c == '<' {
+                if c == U_QUOTATION_MARK || c == U_APOSTROPHE || c == U_LESS_THAN_SIGN {
                     ret.push_parse_error(ParseError::UnexpectedCharacterInAttributeName);
                 }
                 ret
@@ -483,18 +510,18 @@ impl AttributeName {
 impl AfterAttributeName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ') => States::from(self).into_transition_result(),
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE) => States::from(self).into_transition_result(),
 
-            Character::Char('/') => {
+            Character::Char(U_SOLIDUS) => {
                 States::self_closing_start_tag(self.token).into_transition_result()
             }
-            Character::Char('=') => {
+            Character::Char(U_EQUALS_SIGN) => {
                 States::attribute_value_single_quoted(self.token).into_transition_result()
             }
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -519,17 +546,17 @@ impl AfterAttributeName {
 impl BeforeAttributeValue {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ') => States::from(self).into_transition_result(),
-            Character::Char('"') => {
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE) => States::from(self).into_transition_result(),
+            Character::Char(U_QUOTATION_MARK) => {
                 States::attribute_value_double_quoted(self.token).into_transition_result()
             }
-            Character::Char('\'') => {
+            Character::Char(U_APOSTROPHE) => {
                 States::attribute_value_single_quoted(self.token).into_transition_result()
             }
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_parse_error(ParseError::MissingAttributeValue);
                 ret.push_emit(self.token);
@@ -547,11 +574,13 @@ impl BeforeAttributeValue {
 impl AttributeValueDoubleQuoted {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('"') => {
+            Character::Char(U_QUOTATION_MARK) => {
                 States::after_attribute_value_quoted(self.token).into_transition_result()
             }
-            Character::Char('&') => States::character_reference(self, "").into_transition_result(),
-            Character::Char('\0') => {
+            Character::Char(U_AMPERSAND) => {
+                States::character_reference(self, "").into_transition_result()
+            }
+            Character::Char(U_NULL) => {
                 let attribute = self
                     .token
                     .current_attribute_mut()
@@ -585,11 +614,13 @@ impl AttributeValueDoubleQuoted {
 impl AttributeValueSingleQuoted {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\'') => {
+            Character::Char(U_APOSTROPHE) => {
                 States::after_attribute_value_quoted(self.token).into_transition_result()
             }
-            Character::Char('&') => States::character_reference(self, "").into_transition_result(),
-            Character::Char('\0') => {
+            Character::Char(U_AMPERSAND) => {
+                States::character_reference(self, "").into_transition_result()
+            }
+            Character::Char(U_NULL) => {
                 let attribute = self
                     .token
                     .current_attribute_mut()
@@ -623,19 +654,21 @@ impl AttributeValueSingleQuoted {
 impl AttributeValueUnquoted {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ') => {
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE) => {
                 States::before_attribute_name(self.token).into_transition_result()
             }
-            Character::Char('&') => States::character_reference(self, "").into_transition_result(),
-            Character::Char('>') => {
+            Character::Char(U_AMPERSAND) => {
+                States::character_reference(self, "").into_transition_result()
+            }
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
             }
-            Character::Char('\0') => {
+            Character::Char(U_NULL) => {
                 let attribute = self
                     .token
                     .current_attribute_mut()
@@ -662,7 +695,12 @@ impl AttributeValueUnquoted {
                 attribute.push_value(c);
 
                 let mut ret = States::from(self).into_transition_result();
-                if c == '"' || c == '\'' || c == '<' || c == '=' || c == '`' {
+                if c == U_QUOTATION_MARK
+                    || c == U_APOSTROPHE
+                    || c == U_LESS_THAN_SIGN
+                    || c == U_EQUALS_SIGN
+                    || c == U_GRAVE_ACCENT
+                {
                     ret.push_parse_error(ParseError::UnexpectedCharacterInUnquotedAttributeValue);
                 }
                 ret
@@ -674,16 +712,16 @@ impl AttributeValueUnquoted {
 impl AfterAttributeValueQuoted {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ') => {
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE) => {
                 States::before_attribute_name(self.token).into_transition_result()
             }
-            Character::Char('/') => {
+            Character::Char(U_SOLIDUS) => {
                 States::self_closing_start_tag(self.token).into_transition_result()
             }
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -708,7 +746,7 @@ impl AfterAttributeValueQuoted {
 impl SelfClosingStartTag {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 self.token.set_self_closing(token::SelfClosingFlag::Set);
 
                 let mut ret = States::data().into_transition_result();
@@ -734,7 +772,7 @@ impl SelfClosingStartTag {
 impl BogusComment {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -745,7 +783,7 @@ impl BogusComment {
                 ret.push_emit(Token::Eof);
                 ret
             }
-            Character::Char('\0') => {
+            Character::Char(U_NULL) => {
                 self.token.push(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -797,8 +835,10 @@ impl MarkupDeclarationOpen {
 impl CommentStart {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('-') => States::comment_start_dash(self.token).into_transition_result(),
-            Character::Char('>') => {
+            Character::Char(U_HYPHEN_MINUS) => {
+                States::comment_start_dash(self.token).into_transition_result()
+            }
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_parse_error(ParseError::AbruptClosingOfEmptyComment);
                 ret.push_emit(self.token);
@@ -816,8 +856,10 @@ impl CommentStart {
 impl CommentStartDash {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('-') => States::comment_end(self.token).into_transition_result(),
-            Character::Char('>') => {
+            Character::Char(U_HYPHEN_MINUS) => {
+                States::comment_end(self.token).into_transition_result()
+            }
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_parse_error(ParseError::AbruptClosingOfEmptyComment);
                 ret.push_emit(self.token);
@@ -844,12 +886,14 @@ impl CommentStartDash {
 impl Comment {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('<') => {
-                self.token.push('<');
+            Character::Char(U_LESS_THAN_SIGN) => {
+                self.token.push(U_LESS_THAN_SIGN);
                 States::comment_less_than_sign(self.token).into_transition_result()
             }
-            Character::Char('-') => States::comment_end_dash(self.token).into_transition_result(),
-            Character::Char('\0') => {
+            Character::Char(U_HYPHEN_MINUS) => {
+                States::comment_end_dash(self.token).into_transition_result()
+            }
+            Character::Char(U_NULL) => {
                 self.token.push(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -875,7 +919,9 @@ impl Comment {
 impl CommentEndDash {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('-') => States::comment_end(self.token).into_transition_result(),
+            Character::Char(U_HYPHEN_MINUS) => {
+                States::comment_end(self.token).into_transition_result()
+            }
             Character::Eof => {
                 let mut ret = States::term().into_transition_result();
                 ret.push_parse_error(ParseError::EofInTag);
@@ -897,13 +943,15 @@ impl CommentEndDash {
 impl CommentEnd {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
             }
-            Character::Char('!') => States::comment_end_bang(self.token).into_transition_result(),
-            Character::Char('-') => {
+            Character::Char(U_EXCLAMATION_MARK) => {
+                States::comment_end_bang(self.token).into_transition_result()
+            }
+            Character::Char(U_HYPHEN_MINUS) => {
                 self.token.push(U_HYPHEN_MINUS);
 
                 States::from(self).into_transition_result()
@@ -930,13 +978,13 @@ impl CommentEnd {
 impl CommentEndBang {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('-') => {
+            Character::Char(U_HYPHEN_MINUS) => {
                 self.token.push(U_HYPHEN_MINUS);
                 self.token.push(U_HYPHEN_MINUS);
                 self.token.push(U_EXCLAMATION_MARK);
                 States::comment_end_dash(self.token).into_transition_result()
             }
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_parse_error(ParseError::IncorrectlyOpenedComment);
                 ret.push_emit(self.token);
@@ -965,11 +1013,11 @@ impl CommentEndBang {
 impl Doctype {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ') => States::before_doctype_name().into_transition_result(),
-            Character::Char('>') => {
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE) => States::before_doctype_name().into_transition_result(),
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::before_doctype_name().into_transition_result();
                 ret.set_reconsume();
                 ret
@@ -1000,22 +1048,22 @@ impl Doctype {
 impl BeforeDoctypeName {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ') => States::from(self).into_transition_result(),
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE) => States::from(self).into_transition_result(),
             Character::Char(c) if c.is_ascii_uppercase() => {
                 let token = token::Doctype::from_char(c.to_lowercase().next().unwrap());
                 States::doctype_name(token).into_transition_result()
             }
-            Character::Char('\0') => {
+            Character::Char(U_NULL) => {
                 let token = token::Doctype::from_char(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::doctype_name(token).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret
             }
-            Character::Char('>') => {
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let token = token::Doctype {
                     name: None,
                     force_quirks: token::ForceQuirksFlag::On,
@@ -1051,11 +1099,11 @@ impl BeforeDoctypeName {
 impl DoctypeName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
-            Character::Char('\t')
-            | Character::Char('\n')
-            | Character::Char('\x0C')
-            | Character::Char(' ') => States::after_doctype_name().into_transition_result(),
-            Character::Char('>') => {
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE) => States::after_doctype_name().into_transition_result(),
+            Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -1065,7 +1113,7 @@ impl DoctypeName {
 
                 States::from(self).into_transition_result()
             }
-            Character::Char('\0') => {
+            Character::Char(U_NULL) => {
                 self.token.push(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -1093,7 +1141,7 @@ impl DoctypeName {
 impl CharacterReference {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         self.tmp = String::new();
-        self.tmp.push('&');
+        self.tmp.push(U_AMPERSAND);
         match c {
             Character::Char(a) if a.is_alphanumeric() => {
                 // Reconsume in the named character reference state.
@@ -1102,8 +1150,8 @@ impl CharacterReference {
                 ret.set_reconsume();
                 ret
             }
-            Character::Char('#') => {
-                self.tmp.push('#');
+            Character::Char(U_NUMBER_SIGN) => {
+                self.tmp.push(U_NUMBER_SIGN);
                 States::numeric_character_reference(self.return_state, self.tmp)
                     .into_transition_result()
             }
@@ -1147,7 +1195,7 @@ impl NamedCharacterReference {
         let PossibleCharacterReferenceWithNextChar(possible_char_ref, next_c) = input;
 
         let next_char_equals_or_alpha = match next_c {
-            Character::Char('=') => true,
+            Character::Char(U_EQUALS_SIGN) => true,
             Character::Char(ch) if ch.is_alphanumeric() => true,
             _ => false,
         };
@@ -1160,7 +1208,7 @@ impl NamedCharacterReference {
             // (=) or an ASCII alphanumeric, then, for historical reasons,
             // flush code points consumed as a character reference and switch to the return state.
             let was_consumed_as_part_of_attribute = self.get_attribute_token().is_some();
-            let last_char_is_semicolon = char_ref.ends_with(';');
+            let last_char_is_semicolon = char_ref.ends_with(U_SEMICOLON);
             let historical = was_consumed_as_part_of_attribute
                 && last_char_is_semicolon
                 && next_char_equals_or_alpha;
@@ -1259,7 +1307,7 @@ impl AmbiguousAmpersand {
                     ret
                 }
             }
-            Character::Char(';') => {
+            Character::Char(U_SEMICOLON) => {
                 let mut ret = self.return_state.into_transition_result();
                 ret.push_parse_error(ParseError::UnknownNamedCharacterReference);
                 ret.set_reconsume();
@@ -1291,7 +1339,8 @@ impl NumericCharacterReference {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         let character_reference_code = 0;
         match c {
-            Character::Char(ch @ 'x') | Character::Char(ch @ 'X') => {
+            Character::Char(ch @ U_LATIN_SMALL_LETTER_X)
+            | Character::Char(ch @ U_LATIN_CAPITAL_LETTER_X) => {
                 self.tmp.push(ch);
                 States::hexadecimal_character_reference_start(
                     self.return_state,
@@ -1431,7 +1480,7 @@ impl HexadecimalCharacterReference {
 
                 States::from(self).into_transition_result()
             }
-            Character::Char(';') => States::numeric_character_reference_end(
+            Character::Char(U_SEMICOLON) => States::numeric_character_reference_end(
                 self.return_state,
                 self.tmp,
                 self.character_reference_code,
@@ -1462,7 +1511,7 @@ impl DecimalCharacterReference {
 
                 States::from(self).into_transition_result()
             }
-            Character::Char(';') => States::numeric_character_reference_end(
+            Character::Char(U_SEMICOLON) => States::numeric_character_reference_end(
                 self.return_state,
                 self.tmp,
                 self.character_reference_code,
