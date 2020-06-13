@@ -14,7 +14,6 @@ const U_HYPHEN_MINUS: char = '\u{002D}';
 const U_LESS_THAN_SIGN: char = '\u{003C}';
 const U_REPLACEMENT_CHARACTER: char = '\u{FFFD}';
 const U_SOLIDUS: char = '\u{002F}';
-
 /*
  * Transition Impls
  */
@@ -221,6 +220,7 @@ impl TagName {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ') => {
                 States::before_attribute_name(self.token).into_transition_result()
             }
@@ -299,6 +299,7 @@ impl RcDataEndTagName {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ')
                 if self.is_appropriate_end_tag_token() =>
             {
@@ -363,6 +364,7 @@ impl BeforeAttributeName {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ') => States::from(self).into_transition_result(),
             Character::Char('/') | Character::Char('>') | Character::Eof => {
                 let mut ret = States::after_attribute_name(self.token).into_transition_result();
@@ -390,6 +392,7 @@ impl AttributeName {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ')
             | Character::Char('/')
             | Character::Char('>')
@@ -482,6 +485,7 @@ impl AfterAttributeName {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ') => States::from(self).into_transition_result(),
 
             Character::Char('/') => {
@@ -517,6 +521,7 @@ impl BeforeAttributeValue {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ') => States::from(self).into_transition_result(),
             Character::Char('"') => {
                 States::attribute_value_double_quoted(self.token).into_transition_result()
@@ -620,6 +625,7 @@ impl AttributeValueUnquoted {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ') => {
                 States::before_attribute_name(self.token).into_transition_result()
             }
@@ -670,6 +676,7 @@ impl AfterAttributeValueQuoted {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ') => {
                 States::before_attribute_name(self.token).into_transition_result()
             }
@@ -960,6 +967,7 @@ impl Doctype {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ') => States::before_doctype_name().into_transition_result(),
             Character::Char('>') => {
                 let mut ret = States::before_doctype_name().into_transition_result();
@@ -994,6 +1002,7 @@ impl BeforeDoctypeName {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ') => States::from(self).into_transition_result(),
             Character::Char(c) if c.is_ascii_uppercase() => {
                 let token = token::Doctype::from_char(c.to_lowercase().next().unwrap());
@@ -1044,6 +1053,7 @@ impl DoctypeName {
         match c {
             Character::Char('\t')
             | Character::Char('\n')
+            | Character::Char('\x0C')
             | Character::Char(' ') => States::after_doctype_name().into_transition_result(),
             Character::Char('>') => {
                 let mut ret = States::data().into_transition_result();
