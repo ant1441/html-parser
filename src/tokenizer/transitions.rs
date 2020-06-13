@@ -1,4 +1,4 @@
-use log::{trace, warn};
+use log::trace;
 
 use super::{
     codepoint,
@@ -323,27 +323,19 @@ impl RcDataEndTagOpen {
 
 impl RcDataEndTagName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
-        // TODO
-        // An appropriate end tag token is an end tag token whose tag name matches
-        // the tag name of the last start tag to have been emitted from this
-        // tokenizer, if any.
-        // If no start tag has been emitted from this tokenizer, then no end tag
-        // token is appropriate.
-        warn!("[TODO] is_appropriate_end_tag");
-        let is_appropriate_end_tag = true;
         match c {
             Character::Char('\t')
             | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ')
-                if is_appropriate_end_tag =>
+                if self.is_appropriate_end_tag_token() =>
             {
                 States::before_attribute_name(self.token).into_transition_result()
             }
-            Character::Char('/') if is_appropriate_end_tag => {
+            Character::Char('/') if self.is_appropriate_end_tag_token() => {
                 States::self_closing_start_tag(self.token).into_transition_result()
             }
-            Character::Char('>') if is_appropriate_end_tag => {
+            Character::Char('>') if self.is_appropriate_end_tag_token() => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -374,6 +366,22 @@ impl RcDataEndTagName {
 
                 ret
             }
+        }
+    }
+
+    // An appropriate end tag token is an end tag token whose tag name matches
+    // the tag name of the last start tag to have been emitted from this
+    // tokenizer, if any.
+    // If no start tag has been emitted from this tokenizer, then no end tag
+    // token is appropriate.
+    fn is_appropriate_end_tag_token(&self) -> bool {
+        if let Token::EndTag(ref _token) = self.token {
+            todo!("RcDataEndTagName::is_appropriate_end_tag");
+        } else {
+            panic!(
+                "Unexpected token in RcDataEndTagName::is_appropriate_end_tag_token: {:?}",
+                self.token
+            );
         }
     }
 }
@@ -428,13 +436,19 @@ impl AttributeName {
                 States::before_attribute_value(self.token).into_transition_result()
             }
             Character::Char(c) if c.is_ascii_uppercase() => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeName");
                 attribute.push_name(c.to_lowercase().next().unwrap());
 
                 States::from(self).into_transition_result()
             }
             Character::Null => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeName");
                 attribute.push_name(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -442,7 +456,10 @@ impl AttributeName {
                 ret
             }
             Character::Char(c) => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeName");
                 attribute.push_name(c);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -455,37 +472,37 @@ impl AttributeName {
         }
     }
 
-    #[allow(unreachable_code, unused_variables)]
     fn check_duplicate_attribuite(&mut self) {
-        warn!("[TODO] Check duplicate attribute");
-        // TODO
-        if false {
-            //if let Token::StartTag(tag) = self.token {
-            if false {
-                let tag: StartTag = todo!();
-
-                let current_attribute = tag.current_attribute();
-                let num_attributes = tag.attributes_iter().count();
-
-                for (n, attribute) in tag.attributes_iter().enumerate() {
-                    if n == num_attributes {
-                        break;
-                    }
-
-                    dbg!(attribute);
-                    /*
-                    if attribute.name == current_attribute.name {
-                        current_attribute.set_duplicate();
-                            break;
-                    }
-                    */
-                }
-                todo!()
-            // } else if let Token::EndTag(tag) = self.token {
-            //     todo!()
+        if let Token::StartTag(ref mut tag) = self.token {
+            let num_attributes = tag.attributes_iter().count();
+            let current_attribute_name = if let Some(current_attribute) = tag.current_attribute() {
+                current_attribute.name.to_owned()
             } else {
-                panic!("Unexpected token in AttributeName::check_duplicate_attribuite");
+                return;
+            };
+
+            let duplicate = tag.attributes_iter().enumerate().any(|(n, attribute)| {
+                // The last (current) attribute is never a duplicate
+                if n == num_attributes - 1 {
+                    return false;
+                }
+
+                if attribute.name == current_attribute_name {
+                    return true;
+                }
+                false
+            });
+            if duplicate {
+                if let Some(ref mut current_attribute) = tag.current_attribute_mut() {
+                    trace!("Found duplicate attribute: {:?}", current_attribute);
+                    current_attribute.set_duplicate()
+                }
             }
+        } else {
+            panic!(
+                "Unexpected token in AttributeName::check_duplicate_attribuite: {:?}",
+                self.token
+            );
         }
     }
 }
@@ -562,7 +579,10 @@ impl AttributeValueDoubleQuoted {
             }
             Character::Char('&') => States::character_reference(self, "").into_transition_result(),
             Character::Null => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeValueDoubleQuoted");
                 attribute.push_value(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -577,13 +597,19 @@ impl AttributeValueDoubleQuoted {
                 ret
             }
             Character::LineFeed => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeValueDoubleQuoted");
                 attribute.push_value('\n');
 
                 States::from(self).into_transition_result()
             }
             Character::Char(c) => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeValueDoubleQuoted");
                 attribute.push_value(c);
 
                 States::from(self).into_transition_result()
@@ -600,7 +626,10 @@ impl AttributeValueSingleQuoted {
             }
             Character::Char('&') => States::character_reference(self, "").into_transition_result(),
             Character::Null => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeValueSingleQuoted");
                 attribute.push_value(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -615,13 +644,19 @@ impl AttributeValueSingleQuoted {
                 ret
             }
             Character::LineFeed => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeValueSingleQuoted");
                 attribute.push_value('\n');
 
                 States::from(self).into_transition_result()
             }
             Character::Char(c) => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeValueSingleQuoted");
                 attribute.push_value(c);
 
                 States::from(self).into_transition_result()
@@ -646,7 +681,10 @@ impl AttributeValueUnquoted {
                 ret
             }
             Character::Null => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeValueUnquoted");
                 attribute.push_value(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -662,7 +700,10 @@ impl AttributeValueUnquoted {
                 ret
             }
             Character::Char(c) => {
-                let attribute = self.token.current_attribute_mut().unwrap();
+                let attribute = self
+                    .token
+                    .current_attribute_mut()
+                    .expect("No attribute found when handling AttributeValueUnquoted");
                 attribute.push_value(c);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -781,7 +822,7 @@ impl MarkupDeclarationOpen {
                 "DOCTYPE" => States::doctype().into_transition_result(),
                 "--" => States::comment_start("").into_transition_result(),
                 "[CDATA[" => {
-                    //     If there is an adjusted current node and it is not an element in the HTML namespace, then switch to the CDATA section state.
+                    // If there is an adjusted current node and it is not an element in the HTML namespace, then switch to the CDATA section state.
                     if let Some(_node) = self.get_adjusted_current_node() {
                         // if !node.is_element_in_html_namespace() {
                         return States::cdata_section().into_transition_result();
@@ -1261,7 +1302,9 @@ impl AmbiguousAmpersand {
         match c {
             Character::Char(a) if a.is_alphanumeric() => {
                 if let Some(token) = self.get_attribute_token() {
-                    let attribute = token.current_attribute_mut().unwrap();
+                    let attribute = token
+                        .current_attribute_mut()
+                        .expect("No attribute found when handling AmbiguousAmpersand");
                     attribute.push_value(a);
 
                     States::from(self).into_transition_result()
@@ -1397,7 +1440,7 @@ impl DecimalCharacterReferenceStart {
                 for emit in to_emit {
                     ret.push_emit(emit);
                 }
-                ret.insert_parse_error(0, ParseError::AbsenceOfDigitsInNumericCharacterReference);
+                ret.push_parse_error(ParseError::AbsenceOfDigitsInNumericCharacterReference);
                 ret.set_reconsume();
                 ret
             }

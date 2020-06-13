@@ -118,11 +118,7 @@ impl Token {
         }
     }
 
-    pub(crate) fn add_attribute<S1: ToString, S2: ToString>(
-        &mut self,
-        name: S1,
-        value: S2,
-    ) {
+    pub(crate) fn add_attribute<S1: ToString, S2: ToString>(&mut self, name: S1, value: S2) {
         match self {
             Token::StartTag(t) => t.add_attribute(name.to_string(), value.to_string()),
             Token::EndTag(t) => t.add_attribute(name.to_string(), value.to_string()),
@@ -158,6 +154,13 @@ impl Token {
             Token::StartTag(t) => t.set_self_closing(f),
             Token::EndTag(t) => t.set_self_closing(f),
             _ => panic!("Cannot set_self_closing on {:?}", self),
+        }
+    }
+
+    /// emitting should be called just before a Token is emitted
+    pub(super) fn emitting(&mut self) {
+        if let Token::StartTag(t) = self {
+            t.emitting()
         }
     }
 }
@@ -264,6 +267,11 @@ impl StartTag {
 
     pub(crate) fn set_self_closing(&mut self, f: SelfClosingFlag) {
         self.self_closing = f
+    }
+
+    /// emitting should be called just before a Token is emitted
+    pub(super) fn emitting(&mut self) {
+        self.attributes.retain(|a| !a.duplicate)
     }
 }
 

@@ -79,24 +79,15 @@ impl TransitionResult {
     }
 
     pub(super) fn push_emit<T: Into<Token>>(&mut self, token: T) {
+        let mut token = token.into();
+        token.emitting();
         let mut emits = self.emit.take();
-        emits.push(token.into());
-        self.emit.replace(emits);
-    }
-
-    #[allow(dead_code)]
-    pub(super) fn insert_emit<T: Into<Token>>(&mut self, index: usize, token: T) {
-        let mut emits = self.emit.take();
-        emits.insert(index, token.into());
+        emits.push(token);
         self.emit.replace(emits);
     }
 
     pub(super) fn push_parse_error(&mut self, err: ParseError) {
         // TODO: Handle parse errors
-        warn!("Parse Error: {}", err);
-    }
-
-    pub(super) fn insert_parse_error(&mut self, _index: usize, err: ParseError) {
         warn!("Parse Error: {}", err);
     }
 }
