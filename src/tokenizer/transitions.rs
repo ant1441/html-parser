@@ -26,11 +26,6 @@ impl Data {
         match c {
             Character::Char('&') => States::character_reference(self, "").into_transition_result(),
             Character::Char('<') => States::tag_open().into_transition_result(),
-            Character::LineFeed => {
-                let mut ret = States::from(self).into_transition_result();
-                ret.push_emit('\n');
-                ret
-            }
             Character::Char('\0') => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
@@ -70,11 +65,6 @@ impl RcData {
                 ret.push_emit(Token::Eof);
                 ret
             }
-            Character::LineFeed => {
-                let mut ret = States::from(self).into_transition_result();
-                ret.push_emit('\n');
-                ret
-            }
             Character::Char(c) => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_emit(c);
@@ -97,11 +87,6 @@ impl RawText {
             Character::Eof => {
                 let mut ret = States::term().into_transition_result();
                 ret.push_emit(Token::Eof);
-                ret
-            }
-            Character::LineFeed => {
-                let mut ret = States::from(self).into_transition_result();
-                ret.push_emit('\n');
                 ret
             }
             Character::Char(c) => {
@@ -128,11 +113,6 @@ impl ScriptData {
                 ret.push_emit(Token::Eof);
                 ret
             }
-            Character::LineFeed => {
-                let mut ret = States::from(self).into_transition_result();
-                ret.push_emit('\n');
-                ret
-            }
             Character::Char(c) => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_emit(c);
@@ -154,11 +134,6 @@ impl PlainText {
             Character::Eof => {
                 let mut ret = States::term().into_transition_result();
                 ret.push_emit(Token::Eof);
-                ret
-            }
-            Character::LineFeed => {
-                let mut ret = States::from(self).into_transition_result();
-                ret.push_emit('\n');
                 ret
             }
             Character::Char(c) => {
@@ -245,7 +220,6 @@ impl TagName {
         };
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ') => {
                 States::before_attribute_name(self.token).into_transition_result()
@@ -324,7 +298,6 @@ impl RcDataEndTagName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ')
                 if self.is_appropriate_end_tag_token() =>
@@ -389,7 +362,6 @@ impl BeforeAttributeName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ') => States::from(self).into_transition_result(),
             Character::Char('/') | Character::Char('>') | Character::Eof => {
@@ -417,7 +389,6 @@ impl AttributeName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ')
             | Character::Char('/')
@@ -510,7 +481,6 @@ impl AfterAttributeName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ') => States::from(self).into_transition_result(),
 
@@ -546,7 +516,6 @@ impl BeforeAttributeValue {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ') => States::from(self).into_transition_result(),
             Character::Char('"') => {
@@ -595,15 +564,6 @@ impl AttributeValueDoubleQuoted {
                 ret.push_emit(Token::Eof);
                 ret
             }
-            Character::LineFeed => {
-                let attribute = self
-                    .token
-                    .current_attribute_mut()
-                    .expect("No attribute found when handling AttributeValueDoubleQuoted");
-                attribute.push_value('\n');
-
-                States::from(self).into_transition_result()
-            }
             Character::Char(c) => {
                 let attribute = self
                     .token
@@ -642,15 +602,6 @@ impl AttributeValueSingleQuoted {
                 ret.push_emit(Token::Eof);
                 ret
             }
-            Character::LineFeed => {
-                let attribute = self
-                    .token
-                    .current_attribute_mut()
-                    .expect("No attribute found when handling AttributeValueSingleQuoted");
-                attribute.push_value('\n');
-
-                States::from(self).into_transition_result()
-            }
             Character::Char(c) => {
                 let attribute = self
                     .token
@@ -668,7 +619,6 @@ impl AttributeValueUnquoted {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ') => {
                 States::before_attribute_name(self.token).into_transition_result()
@@ -719,7 +669,6 @@ impl AfterAttributeValueQuoted {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ') => {
                 States::before_attribute_name(self.token).into_transition_result()
@@ -795,11 +744,6 @@ impl BogusComment {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret
-            }
-            Character::LineFeed => {
-                self.token.push('\n');
-
-                States::comment(self.token).into_transition_result()
             }
             Character::Char(c) => {
                 self.token.push(c);
@@ -912,11 +856,6 @@ impl Comment {
                 ret.push_emit(Token::Eof);
                 ret
             }
-            Character::LineFeed => {
-                self.token.push('\n');
-
-                States::from(self).into_transition_result()
-            }
             Character::Char(c) => {
                 self.token.push(c);
 
@@ -1020,7 +959,6 @@ impl Doctype {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ') => States::before_doctype_name().into_transition_result(),
             Character::Char('>') => {
@@ -1055,7 +993,6 @@ impl BeforeDoctypeName {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ') => States::from(self).into_transition_result(),
             Character::Char(c) if c.is_ascii_uppercase() => {
@@ -1106,7 +1043,6 @@ impl DoctypeName {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char('\t')
-            | Character::LineFeed
             | Character::Char('\n')
             | Character::Char(' ') => States::after_doctype_name().into_transition_result(),
             Character::Char('>') => {

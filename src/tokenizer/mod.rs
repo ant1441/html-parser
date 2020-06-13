@@ -77,8 +77,6 @@ where
         // Any occurrences of noncharacters are noncharacter-in-input-stream parse errors
         // and any occurrences of controls other than ASCII whitespace and U+0000 NULL
         // characters are control-character-in-input-stream parse errors.
-        //
-        // TODO: normalizing newlines
 
         let mut potential_char = Vec::with_capacity(4);
         loop {
@@ -91,8 +89,22 @@ where
             }?;
             potential_char.push(b[0]);
             let c = match str::from_utf8(&potential_char) {
-                Ok("\r") => todo!("handle \\r\\n"),
-                Ok("\n") => Ok(Character::LineFeed),
+                // To normalize newlines in a string, replace every
+                // U+000D CR U+000A LF (\r\n) code point pair with a single
+                // U+000A LF (\n) code point, and then replace every remaining
+                // U+000D CR (\r) code point with a U+000A LF (\n) code point.
+                Ok("\r") => match self.peek_next_character().unwrap() {
+                    Character::Char('\n') => {
+                        // Remove the '\r' from potential_char, the '\n' found next will be handled
+                        potential_char.pop();
+                        continue;
+                    }
+                    _ => {
+                        // Replace the '\r' in potential_char with '\n'
+                        trace!("Replacing lone \\r with \\n");
+                        Ok('\n'.into())
+                    }
+                },
                 Ok(c) => Ok(c.chars().next().unwrap().into()),
                 e @ Err(_) if potential_char.len() == 4 => {
                     debug!("Invalid UTF8: {:x?}", potential_char);
@@ -142,9 +154,7 @@ where
             identifiers.len()
         );
         let original_char = match original_character {
-            // Fairly sure this has to be a Char('&')
             Character::Char(c) => c,
-            Character::LineFeed => '\n',
             Character::Eof => {
                 todo!("find_named_character_reference: How to handle EOF/NULL?");
             }
@@ -172,7 +182,6 @@ where
                     Character::Eof => {
                         todo!("find_named_character_reference: How to handle EOF/NULL?")
                     }
-                    Character::LineFeed => '\n',
                     Character::Char(c) => c,
                 };
                 tmp.push(next_char);

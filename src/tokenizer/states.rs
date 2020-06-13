@@ -1030,7 +1030,6 @@ pub(super) enum StateMachineMessages {
 #[derive(Clone, Copy, Debug, PartialEq, From)]
 pub(super) enum Character {
     Char(char),
-    LineFeed,
     Eof,
 }
 
