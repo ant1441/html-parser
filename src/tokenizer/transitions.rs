@@ -31,22 +31,21 @@ impl Data {
                 ret.push_emit('\n');
                 ret
             }
-            Character::Char(c) => {
-                let mut ret = States::from(self).into_transition_result();
-                ret.push_emit(c);
-                ret
-            }
-            Character::Null => {
+            Character::Char('\0') => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 // Not sure if this should be NULL
                 ret.push_emit('\0');
                 ret
             }
-            // Emit an end-of-file token.
             Character::Eof => {
                 let mut ret = States::term().into_transition_result();
                 ret.push_emit(Token::Eof);
+                ret
+            }
+            Character::Char(c) => {
+                let mut ret = States::from(self).into_transition_result();
+                ret.push_emit(c);
                 ret
             }
         }
@@ -60,7 +59,7 @@ impl RcData {
             Character::Char('<') => {
                 States::rc_data_less_than_sign(self.tmp).into_transition_result()
             }
-            Character::Null => {
+            Character::Char('\0') => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret.push_emit(U_REPLACEMENT_CHARACTER);
@@ -89,7 +88,7 @@ impl RawText {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('<') => States::raw_text_less_than_sign().into_transition_result(),
-            Character::Null => {
+            Character::Char('\0') => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret.push_emit(U_REPLACEMENT_CHARACTER);
@@ -118,7 +117,7 @@ impl ScriptData {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char('<') => States::script_data_less_than_sign().into_transition_result(),
-            Character::Null => {
+            Character::Char('\0') => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret.push_emit(U_REPLACEMENT_CHARACTER);
@@ -146,7 +145,7 @@ impl ScriptData {
 impl PlainText {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
-            Character::Null => {
+            Character::Char('\0') => {
                 let mut ret = States::from(self).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret.push_emit(U_REPLACEMENT_CHARACTER);
@@ -264,7 +263,7 @@ impl TagName {
 
                 States::from(self).into_transition_result()
             }
-            Character::Null => {
+            Character::Char('\0') => {
                 self.token.push(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -444,7 +443,7 @@ impl AttributeName {
 
                 States::from(self).into_transition_result()
             }
-            Character::Null => {
+            Character::Char('\0') => {
                 let attribute = self
                     .token
                     .current_attribute_mut()
@@ -578,7 +577,7 @@ impl AttributeValueDoubleQuoted {
                 States::after_attribute_value_quoted(self.token).into_transition_result()
             }
             Character::Char('&') => States::character_reference(self, "").into_transition_result(),
-            Character::Null => {
+            Character::Char('\0') => {
                 let attribute = self
                     .token
                     .current_attribute_mut()
@@ -625,7 +624,7 @@ impl AttributeValueSingleQuoted {
                 States::after_attribute_value_quoted(self.token).into_transition_result()
             }
             Character::Char('&') => States::character_reference(self, "").into_transition_result(),
-            Character::Null => {
+            Character::Char('\0') => {
                 let attribute = self
                     .token
                     .current_attribute_mut()
@@ -680,7 +679,7 @@ impl AttributeValueUnquoted {
                 ret.push_emit(self.token);
                 ret
             }
-            Character::Null => {
+            Character::Char('\0') => {
                 let attribute = self
                     .token
                     .current_attribute_mut()
@@ -790,7 +789,7 @@ impl BogusComment {
                 ret.push_emit(Token::Eof);
                 ret
             }
-            Character::Null => {
+            Character::Char('\0') => {
                 self.token.push(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -899,7 +898,7 @@ impl Comment {
                 States::comment_less_than_sign(self.token).into_transition_result()
             }
             Character::Char('-') => States::comment_end_dash(self.token).into_transition_result(),
-            Character::Null => {
+            Character::Char('\0') => {
                 self.token.push(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();
@@ -1063,7 +1062,7 @@ impl BeforeDoctypeName {
                 let token = token::Doctype::from_char(c.to_lowercase().next().unwrap());
                 States::doctype_name(token).into_transition_result()
             }
-            Character::Null => {
+            Character::Char('\0') => {
                 let token = token::Doctype::from_char(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::doctype_name(token).into_transition_result();
@@ -1120,7 +1119,7 @@ impl DoctypeName {
 
                 States::from(self).into_transition_result()
             }
-            Character::Null => {
+            Character::Char('\0') => {
                 self.token.push(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::from(self).into_transition_result();

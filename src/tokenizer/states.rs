@@ -1031,7 +1031,6 @@ pub(super) enum StateMachineMessages {
 pub(super) enum Character {
     Char(char),
     LineFeed,
-    Null,
     Eof,
 }
 

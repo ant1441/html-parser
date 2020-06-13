@@ -1,4 +1,4 @@
-use std::io::{self, BufReader, SeekFrom , prelude::*};
+use std::io::{self, prelude::*, BufReader, SeekFrom};
 use std::{
     cell::{Cell, RefCell},
     str,
@@ -12,17 +12,17 @@ mod errors;
 mod named_character_references;
 mod states;
 mod token;
-mod transitions;
 mod transition_result;
+mod transitions;
 
-use self::{
-    states::{Character, NamedCharacterReference, PossibleCharacterReferenceWithNextChar, States},
+use self::states::{
+    Character, NamedCharacterReference, PossibleCharacterReferenceWithNextChar, States,
 };
 pub(crate) use token::Token;
 pub(self) use transition_result::TransitionResult;
 
 use codepoint::Codepoint;
-use errors::{Result};
+use errors::Result;
 use named_character_references::get_entities;
 
 type Emit = Vec<Token>;
@@ -89,10 +89,6 @@ where
                 }
                 r => r,
             }?;
-            if b[0] == 0 {
-                // TODO: Is this needed? \0 is valid UTF8?
-                return Ok(Character::Null);
-            }
             potential_char.push(b[0]);
             let c = match str::from_utf8(&potential_char) {
                 Ok("\r") => todo!("handle \\r\\n"),
@@ -149,7 +145,7 @@ where
             // Fairly sure this has to be a Char('&')
             Character::Char(c) => c,
             Character::LineFeed => '\n',
-            Character::Eof | Character::Null => {
+            Character::Eof => {
                 todo!("find_named_character_reference: How to handle EOF/NULL?");
             }
         };
@@ -177,7 +173,6 @@ where
                         todo!("find_named_character_reference: How to handle EOF/NULL?")
                     }
                     Character::LineFeed => '\n',
-                    Character::Null => '\0',
                     Character::Char(c) => c,
                 };
                 tmp.push(next_char);
@@ -478,7 +473,6 @@ mod test {
             ..Default::default()
         })
     }
-
 
     token_test! {
         amp_string_numeric_char_ref,
