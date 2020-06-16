@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use super::TagName;
 use std::fmt;
 
 use derive_more::From;
@@ -35,14 +36,14 @@ pub struct Doctype {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct StartTag {
-    pub name: String,
+    pub name: TagName,
     pub self_closing: SelfClosingFlag,
     pub attributes: Vec<Attribute>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct EndTag {
-    pub name: String,
+    pub name: TagName,
     pub self_closing: SelfClosingFlag,
     pub attributes: Vec<Attribute>,
 }
@@ -159,8 +160,10 @@ impl Token {
 
     /// emitting should be called just before a Token is emitted
     pub(super) fn emitting(&mut self) {
-        if let Token::StartTag(t) = self {
-            t.emitting()
+        match self {
+            Token::StartTag(t) => t.emitting(),
+            Token::EndTag(t) => t.emitting(),
+            _ => (),
         }
     }
 }
@@ -270,8 +273,9 @@ impl StartTag {
     }
 
     /// emitting should be called just before a Token is emitted
-    pub(super) fn emitting(&mut self) {
-        self.attributes.retain(|a| !a.duplicate)
+    fn emitting(&mut self) {
+        self.attributes.retain(|a| !a.duplicate);
+        self.name = self.name.finalize();
     }
 }
 
@@ -323,6 +327,11 @@ impl EndTag {
 
     pub(crate) fn set_self_closing(&mut self, f: SelfClosingFlag) {
         self.self_closing = f
+    }
+
+    /// emitting should be called just before a Token is emitted
+    fn emitting(&mut self) {
+        self.name = self.name.finalize();
     }
 }
 

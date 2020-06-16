@@ -1,7 +1,7 @@
 use crate::{
     dom,
     parser::{states::*, Parser, TransitionResult},
-    tokenizer::Token,
+    tokenizer::{TagName, Token},
 };
 use std::io;
 
@@ -30,45 +30,45 @@ impl InHead {
                 parse_error("InHead::on_token(Doctype)");
                 States::from(self).into_transition_result()
             }
-            Token::StartTag(tag) if tag.name == "html" => {
+            Token::StartTag(tag) if tag.name == TagName::Html => {
                 todo!("InHead::on_token('html')");
             }
             Token::StartTag(tag)
-                if (tag.name == "base"
-                    || tag.name == "basefont"
-                    || tag.name == "bgsound"
-                    || tag.name == "link") =>
+                if (tag.name == TagName::Base
+                    || tag.name == TagName::Basefont
+                    || tag.name == TagName::Bgsound
+                    || tag.name == TagName::Link) =>
             {
                 todo!("InHead::on_token('base|basefont|bgsound|link')");
             }
-            Token::StartTag(tag) if tag.name == "meta" => {
+            Token::StartTag(tag) if tag.name == TagName::Meta => {
                 todo!("InHead::on_token('meta')");
             }
-            Token::StartTag(tag) if tag.name == "title" => {
+            Token::StartTag(tag) if tag.name == TagName::Title => {
                 todo!("InHead::on_token('title')");
             }
-            Token::StartTag(tag) if tag.name == "noscript" /* && scripting_flag */ => {
+            Token::StartTag(tag) if tag.name == TagName::Noscript /* && scripting_flag */ => {
                 todo!("InHead::on_token('noscript') - scripting disabled");
             }
             Token::StartTag(tag)
-                if (tag.name == "noframes"
-                    || tag.name == "style") =>
+                if (tag.name == TagName::Noframes
+                    || tag.name == TagName::Style) =>
             {
                 todo!("InHead::on_token('base|basefont|bgsound|link')");
             }
-            Token::StartTag(tag) if tag.name == "noscript" /* && !scripting_flag */ => {
+            Token::StartTag(tag) if tag.name == TagName::Noscript /* && !scripting_flag */ => {
                 todo!("InHead::on_token('noscript') - scripting disabled");
             }
-            Token::StartTag(tag) if tag.name == "script" => {
+            Token::StartTag(tag) if tag.name == TagName::Script => {
                 todo!("InHead::on_token('script')");
             }
-            Token::EndTag(tag) if tag.name == "head" => {
+            Token::EndTag(tag) if tag.name == TagName::Head => {
                 todo!("InHead::on_token('head')");
             }
             Token::EndTag(tag)
-                if (tag.name == "body"
-                    || tag.name == "html"
-                    || tag.name == "br") =>
+                if (tag.name == TagName::Body
+                    || tag.name == TagName::Html
+                    || tag.name == TagName::Br) =>
             {
                 // Pop the current node (which will be the head element) off the stack of open elements.
 
@@ -76,13 +76,13 @@ impl InHead {
                 ret.set_reprocess();
                 ret
             }
-            Token::StartTag(tag) if tag.name == "template" => {
+            Token::StartTag(tag) if tag.name == TagName::Template => {
                 todo!("InHead::on_token('template')");
             }
-            Token::EndTag(tag) if tag.name == "template" => {
+            Token::EndTag(tag) if tag.name == TagName::Template => {
                 todo!("InHead::on_token('template')");
             }
-            Token::StartTag(tag) if tag.name == "head" => {
+            Token::StartTag(tag) if tag.name == TagName::Head => {
                 parse_error("InHead::on_token(StartTag('head'))");
                 States::from(self).into_transition_result()
             }

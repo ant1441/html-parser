@@ -1,7 +1,7 @@
 use crate::{
     dom,
     parser::{states::*, Parser, TransitionResult},
-    tokenizer::Token,
+    tokenizer::{TagName, Token},
 };
 use std::io;
 
@@ -29,19 +29,19 @@ impl BeforeHead {
                 parse_error("BeforeHead::on_token(Doctype)");
                 States::from(self).into_transition_result()
             }
-            Token::StartTag(tag) if tag.name == "html" => {
+            Token::StartTag(tag) if tag.name == TagName::Html => {
                 todo!("Process the token using the rules for the \"in body\" insertion mode.")
             }
-            Token::StartTag(tag) if tag.name == "head" => todo!(
-                "Insert an HTML element for the token.  
-Set the head element pointer to the newly created head element.  
+            Token::StartTag(tag) if tag.name == TagName::Head => todo!(
+                "Insert an HTML element for the token.
+Set the head element pointer to the newly created head element.
 Switch the insertion mode to \"in head\". "
             ),
             Token::EndTag(tag)
-                if (tag.name != "head"
-                    && tag.name != "body"
-                    && tag.name != "html"
-                    && tag.name != "br") =>
+                if (tag.name != TagName::Head
+                    && tag.name != TagName::Body
+                    && tag.name != TagName::Html
+                    && tag.name != TagName::Br) =>
             {
                 // Parse error. Ignore the token.
                 parse_error("BeforeHead::on_token(EndTag(_))");

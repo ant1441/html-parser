@@ -3,7 +3,7 @@ use std::io;
 use crate::{
     dom,
     parser::{states::*, Parser, TransitionResult},
-    tokenizer::Token,
+    tokenizer::{TagName, Token},
 };
 
 use super::parse_error;
@@ -13,7 +13,7 @@ impl AfterAfterBody {
         self,
         parser: &mut Parser<R>,
         t: &Token,
-    ) -> TransitionResult 
+    ) -> TransitionResult
     where
         R: io::Read + io::Seek,
     {
@@ -28,7 +28,9 @@ impl AfterAfterBody {
                 todo!()
                 // States::in_body().on_token(document, t)
             }
-            Token::StartTag(tag) if tag.name == "html" => todo!("AfterAfterBody::on_token('html')"),
+            Token::StartTag(tag) if tag.name == TagName::Html => {
+                todo!("AfterAfterBody::on_token('html')")
+            }
             Token::Eof => States::term().into_transition_result(),
             _ => {
                 parse_error("AfterAfterBody::on_token(_)");

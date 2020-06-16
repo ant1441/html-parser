@@ -1,7 +1,7 @@
 use crate::{
     dom,
     parser::{states::*, Parser, TransitionResult},
-    tokenizer::Token,
+    tokenizer::{TagName, Token},
 };
 use std::io;
 
@@ -30,35 +30,35 @@ impl AfterHead {
                 parse_error("AfterHead::on_token(Doctype)");
                 States::from(self).into_transition_result()
             }
-            Token::StartTag(tag) if tag.name == "html" => {
+            Token::StartTag(tag) if tag.name == TagName::Html => {
                 todo!("AfterHead::on_token('html')");
             }
-            Token::StartTag(tag) if tag.name == "body" => {
+            Token::StartTag(tag) if tag.name == TagName::Body => {
                 todo!("AfterHead::on_token('body')");
             }
-            Token::StartTag(tag) if tag.name == "frameset" => {
+            Token::StartTag(tag) if tag.name == TagName::Frameset => {
                 todo!("AfterHead::on_token('frameset')");
             }
             Token::StartTag(tag)
-                if (tag.name == "base"
-                    || tag.name == "basefont"
-                    || tag.name == "bgsound"
-                    || tag.name == "link"
-                    || tag.name == "meta"
-                    || tag.name == "noframes"
-                    || tag.name == "script"
-                    || tag.name == "style"
-                    || tag.name == "template"
-                    || tag.name == "title") =>
+                if (tag.name == TagName::Base
+                    || tag.name == TagName::Basefont
+                    || tag.name == TagName::Bgsound
+                    || tag.name == TagName::Link
+                    || tag.name == TagName::Meta
+                    || tag.name == TagName::Noframes
+                    || tag.name == TagName::Script
+                    || tag.name == TagName::Style
+                    || tag.name == TagName::Template
+                    || tag.name == TagName::Title) =>
             {
                 parse_error("AfterHead::on_token(StartTag('base|basefont|bgsound|link|meta|noframes|script|style|template|title'))");
                 todo!("AfterHead::on_token('base|basefont|bgsound|link|meta|noframes|script|style|template|title')");
             }
-            Token::EndTag(tag) if tag.name == "template" => {
+            Token::EndTag(tag) if tag.name == TagName::Template => {
                 todo!("AfterHead::on_token('template')");
             }
             Token::EndTag(tag)
-                if (tag.name == "body" || tag.name == "html" || tag.name == "br") =>
+                if (tag.name == TagName::Body || tag.name == TagName::Html || tag.name == TagName::Br) =>
             {
                 // Insert an HTML element for a "body" start tag token with no attributes.
                 let node = dom::Element::new("body".to_string());
@@ -68,7 +68,7 @@ impl AfterHead {
                 ret.set_reprocess();
                 ret
             }
-            Token::StartTag(tag) if tag.name == "head" => {
+            Token::StartTag(tag) if tag.name == TagName::Head => {
                 parse_error("AfterHead::on_token(StartTag('head'))");
                 States::from(self).into_transition_result()
             }

@@ -11,6 +11,7 @@ mod codepoint;
 mod errors;
 mod named_character_references;
 mod states;
+mod tagname;
 mod token;
 mod transition_result;
 mod transitions;
@@ -18,6 +19,7 @@ mod transitions;
 use self::states::{
     Character, NamedCharacterReference, PossibleCharacterReferenceWithNextChar, States,
 };
+pub(crate) use tagname::TagName;
 pub(crate) use token::Token;
 pub(self) use transition_result::TransitionResult;
 
@@ -381,7 +383,7 @@ mod test {
         simple_tag,
         "<html>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
     }
@@ -390,7 +392,7 @@ mod test {
         simple_tag_bare_attr,
         "<html foo>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             attributes: vec![Attribute::new("foo", "", false)],
             ..Default::default()
         })
@@ -400,7 +402,7 @@ mod test {
         simple_tag_attr,
         "<html foo=\"bar\">",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             attributes: vec![Attribute::new("foo", "bar", false)],
             ..Default::default()
         })
@@ -410,7 +412,7 @@ mod test {
         simple_tag_attr_single_quote,
         "<html foo='bar'>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             attributes: vec![Attribute::new("foo", "bar", false)],
             ..Default::default()
         })
@@ -420,7 +422,7 @@ mod test {
         simple_tag_multi_attr,
         "<html foo=\"bar\" baz=\"quux\">",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             attributes: vec![
                 Attribute::new("foo", "bar", false),
                 Attribute::new("baz", "quux", false)
@@ -433,11 +435,11 @@ mod test {
         open_close_tag,
         "<html></html>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
         Token::EndTag(EndTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
     }
@@ -446,14 +448,14 @@ mod test {
         open_close_tag_contents,
         "<html>foo</html>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
         Token::Character('f')
         Token::Character('o')
         Token::Character('o')
         Token::EndTag(EndTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
     }
@@ -470,7 +472,7 @@ mod test {
         amp_string_invalid_named_char,
         "<html>&foo</html>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
         Token::Character('&')
@@ -478,7 +480,7 @@ mod test {
         Token::Character('o')
         Token::Character('o')
         Token::EndTag(EndTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
     }
@@ -487,12 +489,12 @@ mod test {
         amp_string_numeric_char_ref,
         "<html>&#128;</html>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
         Token::Character('€')
         Token::EndTag(EndTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
     }
@@ -501,12 +503,12 @@ mod test {
         amp_string_named_char_ref,
         "<html>&euro;</html>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
         Token::Character('€')
         Token::EndTag(EndTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
     }
@@ -515,12 +517,12 @@ mod test {
         amp_string_hex_char_ref,
         "<html>&#x020AC;</html>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
         Token::Character('€')
         Token::EndTag(EndTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
     }
@@ -529,12 +531,12 @@ mod test {
         amp_string_dec_char_ref,
         "<html>&#8364;</html>",
         Token::StartTag(StartTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
         Token::Character('€')
         Token::EndTag(EndTag {
-            name: "html".to_string(),
+            name: TagName::Html,
             ..Default::default()
         })
     }

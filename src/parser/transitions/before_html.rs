@@ -3,7 +3,7 @@ use std::io;
 use crate::{
     dom,
     parser::{states::*, Parser, TransitionResult},
-    tokenizer::Token,
+    tokenizer::{TagName, Token},
 };
 
 use super::parse_error;
@@ -25,7 +25,7 @@ impl BeforeHtml {
             Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
                 States::from(self).into_transition_result()
             }
-            Token::StartTag(tag) if tag.name == "html" => {
+            Token::StartTag(tag) if tag.name == TagName::Html => {
                 let node = dom::Element::new(tag.name.clone());
                 parser.document.push(node);
 
@@ -36,10 +36,10 @@ impl BeforeHtml {
                 States::before_head().into_transition_result()
             }
             Token::EndTag(tag)
-                if (tag.name != "head"
-                    && tag.name != "body"
-                    && tag.name != "html"
-                    && tag.name != "br") =>
+                if (tag.name != TagName::Head
+                    && tag.name != TagName::Body
+                    && tag.name != TagName::Html
+                    && tag.name != TagName::Br) =>
             {
                 // Parse error. Ignore the token.
                 parse_error("BeforeHtml::on_token(EndTag(_))");

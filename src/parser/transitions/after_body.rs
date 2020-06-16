@@ -3,7 +3,7 @@ use log::warn;
 use crate::{
     dom,
     parser::{states::*, Parser, TransitionResult},
-    tokenizer::Token,
+    tokenizer::{TagName, Token},
 };
 use std::io;
 
@@ -30,10 +30,10 @@ impl AfterBody {
                 parse_error("AfterBody::on_token(Doctype)");
                 States::from(self).into_transition_result()
             }
-            Token::StartTag(tag) if tag.name == "html" => {
+            Token::StartTag(tag) if tag.name == TagName::Html => {
                 todo!("AfterBody::on_token('html')");
             }
-            Token::EndTag(tag) if tag.name == "html" => {
+            Token::EndTag(tag) if tag.name == TagName::Html => {
                 warn!("TODO: ...");
                 States::after_after_body().into_transition_result()
             }
