@@ -1,4 +1,4 @@
-use derive_more::From;
+use derive_more::{From, Deref, DerefMut};
 use serde::{Deserialize, Serialize};
 
 use super::{Comment, ProcessingInstruction, Text};
@@ -23,10 +23,12 @@ impl ElementChildNode {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, From, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, From, Hash, PartialEq, Serialize, Deref, DerefMut)]
 pub struct Element {
     name: TagName,
     namespace: Namespace,
+    #[deref]
+    #[deref_mut]
     children: Vec<ElementChildNode>,
 }
 
