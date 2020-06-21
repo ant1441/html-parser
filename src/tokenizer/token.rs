@@ -119,6 +119,28 @@ impl Token {
         }
     }
 
+    pub(crate) fn is_start_tag(&self) -> bool {
+        match self {
+            Token::StartTag(_) => true,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn is_end_tag(&self) -> bool {
+        match self {
+            Token::EndTag(_) => true,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn tag_name(&self) -> Option<&TagName> {
+        match self {
+            Token::StartTag(tag) => Some(&tag.name),
+            Token::EndTag(tag) => Some(&tag.name),
+            _ => None,
+        }
+    }
+
     pub(crate) fn add_attribute<S1: ToString, S2: ToString>(&mut self, name: S1, value: S2) {
         match self {
             Token::StartTag(t) => t.add_attribute(name.to_string(), value.to_string()),
