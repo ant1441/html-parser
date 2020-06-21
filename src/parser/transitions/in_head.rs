@@ -83,6 +83,10 @@ where
                     || tag.name == TagName::Br) =>
             {
                 // Pop the current node (which will be the head element) off the stack of open elements.
+                let elem = parser.open_elements.pop().expect("Expected element on the stack of open elements");
+                if elem.name() != &TagName::Head {
+                    panic!("Unexpected element on the stack of open elements: {:?}", elem);
+                }
 
                 let mut ret = States::after_head().into_transition_result();
                 ret.set_reprocess();

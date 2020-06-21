@@ -15,7 +15,7 @@ pub use namespace::Namespace;
 pub use document::Document;
 pub use document_fragment::DocumentFragment;
 pub use document_type::DocumentType;
-pub use element::Element;
+pub use element::{Element, ElementChildNode};
 pub use processing_instruction::ProcessingInstruction;
 pub use text::Text;
 

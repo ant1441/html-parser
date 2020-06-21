@@ -106,6 +106,39 @@ where
         self.head_element_pointer = Some(head_elem);
     }
 
+    fn insert_character<C: AsRef<str>>(&mut self, data: C) {
+        let (target, pos) = self.appropriate_place_for_inserting_a_node(None).unwrap();
+        if pos > 0 {
+            if let Some(dom::ElementChildNode::Text(ref mut text)) = target.get_mut(pos - 1) {
+                return text.push_str(data.as_ref());
+            }
+        }
+        let node = dom::Text::new(data.as_ref().to_string());
+        target.insert(pos, node.into());
+        dbg!(target);
+    }
+
+    // Returning the parent element and the index to insert at
+    //
+    // ie. You cancall this then call `ret.0.insert(ret.1, new_elem)`
+    fn appropriate_place_for_inserting_a_node(
+        &mut self,
+        r#override: Option<()>,
+    ) -> Option<(&mut dom::Element, usize)> {
+        if r#override.is_some() {
+            todo!("Parser::appropriate_place_for_inserting_a_node with override")
+        }
+        let target = self.current_node_mut()?;
+
+        // TODO: foster parenting
+        if target.name() == &TagName::Template {
+            todo!("Parser::appropriate_place_for_inserting_a_node in template")
+        }
+        let pos = target.len();
+
+        Some((target, pos))
+    }
+
     // https://html.spec.whatwg.org/multipage/parsing.html#tree-construction
     fn is_tree_construction_first_case(&self, token: &Token) -> bool {
         // If the stack of open elements is empty
@@ -177,7 +210,15 @@ where
         false {
             todo!("Parser::adjusted_current_node with HTMLFragmentParsing");
         } else {
-            self.open_elements.last()
+            self.current_node()
         }
+    }
+
+    pub fn current_node(&self) -> Option<&dom::Element> {
+        self.open_elements.last()
+    }
+
+    pub fn current_node_mut(&mut self) -> Option<&mut dom::Element> {
+        self.open_elements.last_mut()
     }
 }

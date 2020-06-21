@@ -67,6 +67,7 @@ Switch the insertion mode to \"in head\". "
 
             let node = dom::Element::new_html(TagName::Head);
             parser.document.push_element(node.clone());
+            parser.open_elements.push(node.clone());
             parser.set_head(node);
 
             let mut ret = States::in_head().into_transition_result();

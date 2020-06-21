@@ -35,9 +35,9 @@ where
             parse_error("InBody::on_token(\\0)");
             current_state.into_transition_result()
         }
-        Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
+        Token::Character(ch @ '\t') | Token::Character(ch @ '\n') | Token::Character(ch @ ' ') => {
             warn!("[TODO] InBody: \\t|\\n|  - Reconstruct the active formatting elements, if any.");
-            warn!("[TODO] InBody: \\t|\\n|  - Insert the token's character.");
+            parser.insert_character(ch.to_string());
             current_state.into_transition_result()
         }
         Token::Character(_) => {
