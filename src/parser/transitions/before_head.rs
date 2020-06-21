@@ -44,11 +44,12 @@ where
         Token::StartTag(tag) if tag.name == TagName::Html => {
             todo!("Process the token using the rules for the \"in body\" insertion mode.")
         }
-        Token::StartTag(tag) if tag.name == TagName::Head => todo!(
-            "Insert an HTML element for the token.
-Set the head element pointer to the newly created head element.
-Switch the insertion mode to \"in head\". "
-        ),
+        Token::StartTag(tag) if tag.name == TagName::Head => {
+            let node = dom::Element::new_html(TagName::Head);
+            parser.document.push_element(node.clone());
+            parser.set_head(node);
+            States::in_head().into_transition_result()
+        }
         Token::EndTag(tag)
             if (tag.name != TagName::Head
                 && tag.name != TagName::Body

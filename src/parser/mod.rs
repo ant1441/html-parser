@@ -25,7 +25,7 @@ pub struct Parser<R>
 where
     R: io::Read + io::Seek,
 {
-    document: Document,
+    pub document: Document,
 
     tokenizer: Tokenizer<R>,
 
@@ -113,7 +113,8 @@ where
         let (target, pos) = self.appropriate_place_for_inserting_a_node(None).unwrap();
         let mut target = target.borrow_mut();
         if pos > 0 {
-            if let Some(dom::ElementChildNode::Text(ref mut text)) = target.get_mut(pos - 1) {
+            if let Some(dom::ElementChildNode::Text(text)) = target.get_mut(pos - 1) {
+                let mut text = text.borrow_mut();
                 return text.push_str(data.as_ref());
             }
         }

@@ -2,23 +2,22 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use derive_more::{From, Deref, DerefMut};
-use serde::{Deserialize, Serialize};
 
 use super::{Comment, ProcessingInstruction, Text};
 use crate::{dom::Namespace, tokenizer::TagName};
 
-#[derive(Clone, Debug, Deserialize, Eq, From, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, From, PartialEq)]
 pub enum ElementChildNode {
-    Element(Element),
-    Text(Text),
-    ProcessingInstruction(ProcessingInstruction),
-    Comment(Comment),
+    Element(Rc<RefCell<Element>>),
+    Text(Rc<RefCell<Text>>),
+    ProcessingInstruction(Rc<RefCell<ProcessingInstruction>>),
+    Comment(Rc<RefCell<Comment>>),
 }
 
 impl ElementChildNode {
     pub fn len(&self) -> usize {
         match self {
-            ElementChildNode::Element(e) => e.len(),
+            ElementChildNode::Element(e) => e.borrow().len(),
             ElementChildNode::Text(_) => 1,
             ElementChildNode::ProcessingInstruction(_) => 1,
             ElementChildNode::Comment(_) => 1,
@@ -26,7 +25,7 @@ impl ElementChildNode {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, From, Hash, PartialEq, Serialize, Deref, DerefMut)]
+#[derive(Clone, Debug, Eq, From, PartialEq, Deref, DerefMut)]
 pub struct Element {
     name: TagName,
     namespace: Namespace,

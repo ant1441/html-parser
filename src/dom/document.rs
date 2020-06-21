@@ -54,8 +54,9 @@ impl Document {
         warn!("[TODO] Document::set_mode({:?})", mode)
     }
     pub(crate) fn push_element(&mut self, elem: Rc<RefCell<Element>>) {
-        if let Some(ref mut _element) = self.element {
-            warn!("[TODO] Document::push_element({:?})", elem)
+        if let Some(ref element) = self.element {
+            let mut element = element.borrow_mut();
+            element.push(elem.into())
         } else {
             self.element = Some(elem)
         }
