@@ -35,10 +35,6 @@ pub struct Element {
 }
 
 impl Element {
-    pub fn len(&self) -> usize {
-        self.children.iter().map(|n| n.len()).sum()
-    }
-
     pub fn name(&self) -> &TagName {
         &self.name
     }
