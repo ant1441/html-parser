@@ -39,9 +39,10 @@ where
         }
         Token::StartTag(tag) if tag.name == TagName::Html => {
             let elem = dom::Element::new_html(tag.name.clone());
-            parser.document.push(elem);
-
-            // TODO: Put this element in the stack of open elements.
+            // TODO: We shouldn't be cloning here, I'm guessing we'll need RC,
+            // but then how to mutate? When do we need to mutate?
+            parser.document.push(elem.clone());
+            parser.open_elements.push(elem);
 
             // TODO: If the Document is being loaded as part of navigation of a browsing context and the result of executing Is environment settings object a secure context? on the Document's relevant settings object is true, then:
             // ...
