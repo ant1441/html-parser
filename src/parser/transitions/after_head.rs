@@ -46,7 +46,11 @@ where
                 todo!("AfterHead::on_token('html')");
             }
             Token::StartTag(tag) if tag.name == TagName::Body => {
-                todo!("AfterHead::on_token('body')");
+                let node = dom::Element::new_html(TagName::Body);
+                parser.insert_html_element(node);
+                parser.frameset_ok = parser::FramesetOkFlag::NotOk;
+
+                States::in_body().into_transition_result()
             }
             Token::StartTag(tag) if tag.name == TagName::Frameset => {
                 todo!("AfterHead::on_token('frameset')");
