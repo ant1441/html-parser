@@ -16,19 +16,31 @@ impl AfterHead {
     where
         R: io::Read + io::Seek,
     {
+        transition(States::from(self), parser, t)
+    }
+}
+
+pub(super) fn transition<R>(
+    current_state: States,
+    parser: &mut Parser<R>,
+    t: &Token,
+) -> TransitionResult
+where
+    R: io::Read + io::Seek,
+{
         match t {
             Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
                 todo!("AfterHead::on_token('\\w') - Insert the character.");
-                // States::from(self).into_transition_result()
+                // current_state.into_transition_result()
             }
             Token::Comment(comment) => {
                 let node = dom::Comment::new(comment.clone());
                 parser.document.push(node);
-                States::from(self).into_transition_result()
+                current_state.into_transition_result()
             }
             Token::Doctype(_) => {
                 parse_error("AfterHead::on_token(Doctype)");
-                States::from(self).into_transition_result()
+                current_state.into_transition_result()
             }
             Token::StartTag(tag) if tag.name == TagName::Html => {
                 todo!("AfterHead::on_token('html')");
@@ -70,13 +82,12 @@ impl AfterHead {
             }
             Token::StartTag(tag) if tag.name == TagName::Head => {
                 parse_error("AfterHead::on_token(StartTag('head'))");
-                States::from(self).into_transition_result()
+                current_state.into_transition_result()
             }
             Token::EndTag(_) => {
                 parse_error("AfterHead::on_token(EndTag(_))");
-                States::from(self).into_transition_result()
+                current_state.into_transition_result()
             }
             _ => todo!("AfterHead::on_token(_)"),
         }
     }
-}
