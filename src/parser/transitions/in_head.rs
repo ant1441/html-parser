@@ -54,7 +54,20 @@ where
                 todo!("InHead::on_token('base|basefont|bgsound|link')");
             }
             Token::StartTag(tag) if tag.name == TagName::Meta => {
-                todo!("InHead::on_token('meta')");
+                let node = dom::Element::new_html(TagName::Meta);
+                parser.insert_html_element(node);
+                parser.open_elements.pop();
+                if tag.is_self_closing() {
+                    todo!("InHead:on_token(Self closing 'meta')");
+                }
+                if let Some(_attr) = tag.attributes_iter().find(|a| a.name == "charset") {
+                    todo!("InHead:on_token('charset' meta)");
+                }
+                if let Some(_attr) = tag.attributes_iter().find(|a| a.name == "http-equiv") {
+                    todo!("InHead:on_token('http-equiv' meta)");
+                }
+
+                current_state.into_transition_result()
             }
             Token::StartTag(tag) if tag.name == TagName::Title => {
                 todo!("InHead::on_token('title')");
@@ -75,7 +88,12 @@ where
                 todo!("InHead::on_token('script')");
             }
             Token::EndTag(tag) if tag.name == TagName::Head => {
-                todo!("InHead::on_token('head')");
+                // Pop the current node (which will be the head element) off the stack of open elements.
+                let elem = parser.open_elements.pop().expect("Expected element on the stack of open elements");
+                if elem.borrow().name() != &TagName::Head {
+                    panic!("Unexpected element on the stack of open elements: {:?} (Expected 'head')", elem);
+                }
+                States::after_head().into_transition_result()
             }
             Token::EndTag(tag)
                 if (tag.name == TagName::Body
@@ -85,7 +103,7 @@ where
                 // Pop the current node (which will be the head element) off the stack of open elements.
                 let elem = parser.open_elements.pop().expect("Expected element on the stack of open elements");
                 if elem.borrow().name() != &TagName::Head {
-                    panic!("Unexpected element on the stack of open elements: {:?}", elem);
+                    panic!("Unexpected element on the stack of open elements: {:?} (Expected 'head')", elem);
                 }
 
                 let mut ret = States::after_head().into_transition_result();

@@ -29,9 +29,9 @@ where
     R: io::Read + io::Seek,
 {
         match t {
-            Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
-                todo!("AfterHead::on_token('\\w') - Insert the character.");
-                // current_state.into_transition_result()
+            Token::Character(ch @ '\t') | Token::Character(ch @ '\n') | Token::Character(ch @ ' ') => {
+                parser.insert_character(ch.to_string());
+                current_state.into_transition_result()
             }
             Token::Comment(comment) => {
                 let node = dom::Comment::new(comment.clone());

@@ -46,7 +46,7 @@ where
         }
         Token::StartTag(tag) if tag.name == TagName::Head => {
             let node = dom::Element::new_html(TagName::Head);
-            parser.document.push_element(node.clone());
+            parser.insert_html_element(node.clone());
             parser.set_head(node);
             States::in_head().into_transition_result()
         }

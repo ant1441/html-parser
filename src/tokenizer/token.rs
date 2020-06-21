@@ -133,6 +133,14 @@ impl Token {
         }
     }
 
+    pub(crate) fn is_self_closing(&self) -> bool {
+        match self {
+            Token::StartTag(tag) => tag.is_self_closing(),
+            Token::EndTag(tag) => tag.is_self_closing(),
+            _ => false,
+        }
+    }
+
     pub(crate) fn tag_name(&self) -> Option<&TagName> {
         match self {
             Token::StartTag(tag) => Some(&tag.name),
@@ -278,8 +286,16 @@ impl StartTag {
         })
     }
 
-    pub(crate) fn attributes_iter(&mut self) -> impl Iterator<Item = &Attribute> + '_ {
+    pub(crate) fn is_self_closing(&self) -> bool {
+        self.self_closing == SelfClosingFlag::Set
+    }
+
+    pub(crate) fn attributes_iter(&self) -> impl Iterator<Item = &Attribute> + '_ {
         self.attributes.iter()
+    }
+
+    pub(crate) fn attributes_iter_mut(&mut self) -> impl Iterator<Item = &mut Attribute> + '_ {
+        self.attributes.iter_mut()
     }
 
     pub(crate) fn current_attribute(&mut self) -> Option<&Attribute> {
@@ -335,8 +351,16 @@ impl EndTag {
         })
     }
 
-    pub(crate) fn attributes_iter(&mut self) -> impl Iterator<Item = &Attribute> + '_ {
+    pub(crate) fn is_self_closing(&self) -> bool {
+        self.self_closing == SelfClosingFlag::Set
+    }
+
+    pub(crate) fn attributes_iter(&self) -> impl Iterator<Item = &Attribute> + '_ {
         self.attributes.iter()
+    }
+
+    pub(crate) fn attributes_iter_mut(&mut self) -> impl Iterator<Item = &mut Attribute> + '_ {
+        self.attributes.iter_mut()
     }
 
     pub(crate) fn current_attribute(&mut self) -> Option<&Attribute> {
