@@ -32,6 +32,9 @@ where
     last_token: Option<Token>,
 
     open_elements: OpenElementsStack,
+
+    // Element pointsers
+    head_element_pointer: Option<dom::Element>,
 }
 
 impl<R> Parser<R>
@@ -50,6 +53,8 @@ where
             reprocess: false,
             last_token: None,
             open_elements: Default::default(),
+
+            head_element_pointer: None,
         }
     }
 
@@ -95,6 +100,10 @@ where
             self.reprocess = res.reprocess();
             self.insertion_mode = Some(res.state().unwrap());
         }
+    }
+
+    fn set_head(&mut self, head_elem: dom::Element) {
+        self.head_element_pointer = Some(head_elem);
     }
 
     // https://html.spec.whatwg.org/multipage/parsing.html#tree-construction

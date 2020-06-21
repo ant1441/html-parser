@@ -66,7 +66,8 @@ Switch the insertion mode to \"in head\". "
             // Reprocess the current token.
 
             let node = dom::Element::new_html(TagName::Head);
-            parser.document.set_head(node);
+            parser.document.push_element(node.clone());
+            parser.set_head(node);
 
             let mut ret = States::in_head().into_transition_result();
             ret.set_reprocess();
