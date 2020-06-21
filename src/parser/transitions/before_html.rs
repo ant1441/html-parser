@@ -38,8 +38,8 @@ where
             current_state.into_transition_result()
         }
         Token::StartTag(tag) if tag.name == TagName::Html => {
-            let node = dom::Element::new(tag.name.clone());
-            parser.document.push(node);
+            let elem = dom::Element::new_html(tag.name.clone());
+            parser.document.push(elem);
 
             // TODO: Put this element in the stack of open elements.
 

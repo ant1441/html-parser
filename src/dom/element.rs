@@ -43,7 +43,7 @@ impl Element {
         self.namespace
     }
 
-    pub fn new(name: TagName) -> Self {
+    pub fn new_html(name: TagName) -> Self {
         Element {
             name,
             namespace: Default::default(),

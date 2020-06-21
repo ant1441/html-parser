@@ -73,7 +73,7 @@ where
                 if (tag.name == TagName::Body || tag.name == TagName::Html || tag.name == TagName::Br) =>
             {
                 // Insert an HTML element for a "body" start tag token with no attributes.
-                let node = dom::Element::new(TagName::Body);
+                let node = dom::Element::new_html(TagName::Body);
                 parser.document.push(node);
 
                 let mut ret = States::in_body().into_transition_result();
