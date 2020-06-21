@@ -124,6 +124,15 @@ where
                 parse_error("InHead::on_token(EndTag(_))");
                 current_state.into_transition_result()
             }
-            _ => todo!("InHead::on_token(_)"),
+            _ => {
+                let elem = parser.open_elements.pop().expect("Expected element on the stack of open elements");
+                if elem.borrow().name() != &TagName::Head {
+                    panic!("Unexpected element on the stack of open elements: {:?} (Expected 'head')", elem);
+                }
+
+                let mut ret = States::after_head().into_transition_result();
+                ret.set_reprocess();
+                ret
+            }
         }
 }
