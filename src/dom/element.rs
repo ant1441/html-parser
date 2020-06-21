@@ -27,8 +27,8 @@ impl ElementChildNode {
 
 #[derive(Clone, Debug, Eq, From, PartialEq, Deref, DerefMut)]
 pub struct Element {
-    name: TagName,
-    namespace: Namespace,
+    pub name: TagName,
+    pub namespace: Namespace,
     #[deref]
     #[deref_mut]
     children: Vec<ElementChildNode>,

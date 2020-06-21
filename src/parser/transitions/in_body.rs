@@ -1,7 +1,7 @@
-use log::warn;
+use log::{trace, warn};
 
 use crate::{
-    dom,
+    dom::{self, Namespace},
     parser::{self, states::*, Parser, TransitionResult},
     tokenizer::{TagName, Token},
 };
@@ -130,7 +130,44 @@ where
             States::term().into_transition_result()
         }
         Token::EndTag(tag) if tag.name == TagName::Body => {
-            todo!("InBody::on_token('body')");
+            if !parser.open_elements.contains_element(&TagName::Body) {
+                parse_error("No Body in stack of open elements");
+                // ignore the token.
+                return current_state.into_transition_result();
+            }
+            let has_unexpected_elem = parser
+                .open_elements
+                .iter()
+                .filter(|e| {
+                    let elem = e.borrow();
+                    let name = elem.name();
+
+                    name != &TagName::Dd
+                        && name != &TagName::Dt
+                        && name != &TagName::Li
+                        && name != &TagName::Optgroup
+                        && name != &TagName::Option
+                        && name != &TagName::P
+                        && name != &TagName::Rb
+                        && name != &TagName::Rp
+                        && name != &TagName::Rt
+                        && name != &TagName::Rtc
+                        && name != &TagName::Tbody
+                        && name != &TagName::Td
+                        && name != &TagName::Tfoot
+                        && name != &TagName::Th
+                        && name != &TagName::Thead
+                        && name != &TagName::Tr
+                        && name != &TagName::Body
+                        && name != &TagName::Html
+                })
+                .count()
+                > 0;
+            if has_unexpected_elem {
+                parse_error("Unexpected element(s) in stack of open elements");
+            }
+
+            States::after_body().into_transition_result()
         }
         Token::EndTag(tag) if tag.name == TagName::Html => {
             if !parser.open_elements.contains_element(&TagName::Body) {
@@ -265,7 +302,26 @@ where
                 || tag.name == TagName::Summary
                 || tag.name == TagName::Ul) =>
         {
-            todo!("InBody::on_token(EndTag('address|...'))");
+            if !parser.open_elements.contains_element(&tag.name) {
+                parse_error(&format!("No {} in stack of open elements", &tag.name));
+                return current_state.into_transition_result();
+            }
+
+            parser.generate_implied_end_tags();
+            let current_node = parser.current_node().unwrap();
+            let current_node = current_node.borrow();
+            if !(current_node.namespace == Namespace::HTML && current_node.name == tag.name) {
+                parse_error("Unexpected tag")
+            }
+            while let Some(e) = parser.open_elements.pop() {
+                let elem = e.borrow();
+                if elem.name == tag.name {
+                    break;
+                }
+                trace!("InBody: Popped {:?} off stack", elem);
+            }
+
+            current_state.into_transition_result()
         }
         Token::EndTag(tag) if tag.name == TagName::Form => {
             todo!("InBody::on_token(EndTag('form'))");
@@ -397,7 +453,10 @@ where
         Token::StartTag(tag) if tag.name == TagName::Noembed => {
             todo!("InBody::on_token('noembed')");
         }
-        Token::StartTag(tag) if tag.name == TagName::Noscript && parser.scripting == parser::ScriptingFlag::Enabled => {
+        Token::StartTag(tag)
+            if tag.name == TagName::Noscript
+                && parser.scripting == parser::ScriptingFlag::Enabled =>
+        {
             todo!("InBody::on_token('noscript')");
         }
         Token::StartTag(tag) if tag.name == TagName::Select => {

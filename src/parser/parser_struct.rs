@@ -133,6 +133,30 @@ where
         target.insert(pos, node.into());
     }
 
+    pub(super) fn generate_implied_end_tags(&mut self) {
+        while let Some(node) = self.current_node() {
+            let node = node.borrow();
+            let name = node.name();
+            if !matches!(
+                name,
+                TagName::Dd
+                    | TagName::Dt
+                    | TagName::Li
+                    | TagName::Optgroup
+                    | TagName::Option
+                    | TagName::P
+                    | TagName::Rb
+                    | TagName::Rp
+                    | TagName::Rt
+                    | TagName::Rtc
+            ) {
+                break;
+            }
+            trace!("generate_implied_end_tags: Popping {} off stack", name);
+            self.open_elements.pop();
+        }
+    }
+
     // Returning the parent element and the index to insert at
     //
     // ie. You cancall this then call `ret.0.insert(ret.1, new_elem)`

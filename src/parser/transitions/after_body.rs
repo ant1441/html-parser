@@ -2,7 +2,7 @@ use log::warn;
 
 use crate::{
     dom,
-    parser::{states::*, Parser, TransitionResult},
+    parser::{states::*, transitions, Parser, TransitionResult},
     tokenizer::{TagName, Token},
 };
 use std::io;
@@ -24,7 +24,7 @@ impl AfterBody {
 
 pub(super) fn transition<R>(
     current_state: States,
-    _parser: &mut Parser<R>,
+    parser: &mut Parser<R>,
     t: &Token,
 ) -> TransitionResult
 where
@@ -32,8 +32,7 @@ where
 {
     match t {
         Token::Character('\t') | Token::Character('\n') | Token::Character(' ') => {
-            todo!("AfterBody::on_token('\\w')");
-            // current_state.into_transition_result()
+            transitions::in_body::transition(current_state, parser, t)
         }
         Token::Comment(_comment) => {
             todo!("AfterBody::on_token(Comment)");
