@@ -36,12 +36,25 @@ where
             current_state.into_transition_result()
         }
         Token::Character(ch @ '\t') | Token::Character(ch @ '\n') | Token::Character(ch @ ' ') => {
-            warn!("[TODO] InBody: \\t|\\n|  - Reconstruct the active formatting elements, if any.");
+            warn!(
+                "[TODO] InBody: '\\t|\\n| ' - Reconstruct the active formatting elements, if any."
+            );
             parser.insert_character(ch.to_string());
             current_state.into_transition_result()
         }
-        Token::Character(_) => {
-            todo!("InBody::on_token(_)");
+        Token::Characters(ch) => {
+            warn!("[TODO] InBody: _  - Reconstruct the active formatting elements, if any.");
+            parser.insert_character(ch.to_string());
+            parser.frameset_ok = parser::FramesetOkFlag::NotOk;
+
+            current_state.into_transition_result()
+        }
+        Token::Character(ch) => {
+            warn!("[TODO] InBody: _  - Reconstruct the active formatting elements, if any.");
+            parser.insert_character(ch.to_string());
+            parser.frameset_ok = parser::FramesetOkFlag::NotOk;
+
+            current_state.into_transition_result()
         }
         Token::Comment(comment) => {
             let node = dom::Comment::new(comment.clone());
@@ -187,7 +200,14 @@ where
                 || tag.name == TagName::Summary
                 || tag.name == TagName::Ul) =>
         {
-            todo!("InBody::on_token('address|...')");
+            if parser.open_elements.contains_element(&TagName::P) {
+                todo!("InBody::on_token('address|...') - close a p element");
+            }
+
+            let node = dom::Element::new_html(tag.name.clone());
+            parser.insert_html_element(node);
+
+            current_state.into_transition_result()
         }
         Token::StartTag(tag)
             if (tag.name == TagName::H1
