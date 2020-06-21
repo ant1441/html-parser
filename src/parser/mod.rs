@@ -57,9 +57,11 @@ where
         loop {
             let insertion_mode = self.insertion_mode.take().unwrap();
 
+            let num_open_elements = self.open_elements.len();
             debug!(
-                "State ({}): {:?}",
+                "State ({}) [{:3} elements]: {:?}",
                 if self.reprocess { "R" } else { "-" },
+                num_open_elements,
                 insertion_mode
             );
             let res = match insertion_mode {
