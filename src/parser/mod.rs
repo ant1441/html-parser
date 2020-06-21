@@ -10,10 +10,12 @@ use crate::{
 };
 
 mod errors;
+mod open_elements_stack;
 mod states;
 mod transition_result;
 mod transitions;
 
+use open_elements_stack::OpenElementsStack;
 use states::States;
 use transition_result::TransitionResult;
 
@@ -29,7 +31,7 @@ where
     reprocess: bool,
     last_token: Option<Token>,
 
-    open_elements: Vec<dom::Node>,
+    open_elements: OpenElementsStack,
 }
 
 impl<R> Parser<R>
@@ -47,7 +49,7 @@ where
             insertion_mode: Some(States::new()),
             reprocess: false,
             last_token: None,
-            open_elements: Vec::new(),
+            open_elements: Default::default(),
         }
     }
 
