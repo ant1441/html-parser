@@ -35,7 +35,7 @@ where
             }
             Token::Comment(comment) => {
                 let node = dom::Comment::new(comment.clone());
-                parser.document.push(node);
+                parser.document.push_comment(node);
                 current_state.into_transition_result()
             }
             Token::Doctype(_) => {
@@ -74,7 +74,7 @@ where
             {
                 // Insert an HTML element for a "body" start tag token with no attributes.
                 let node = dom::Element::new_html(TagName::Body);
-                parser.document.push(node);
+                parser.document.push_element(node);
 
                 let mut ret = States::in_body().into_transition_result();
                 ret.set_reprocess();

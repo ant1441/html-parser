@@ -32,7 +32,7 @@ where
     match t {
         Token::Comment(comment) => {
             let node = dom::Comment::new(comment.clone());
-            parser.document.push(node);
+            parser.document.push_comment(node);
             current_state.into_transition_result()
         }
         Token::Doctype(_)

@@ -4,7 +4,7 @@ use derive_more::{Constructor, From};
 use log::warn;
 use serde::{Deserialize, Serialize};
 
-use super::{Comment, DocumentType, Element, Node, ProcessingInstruction};
+use super::{Comment, DocumentType, Element, ProcessingInstruction};
 
 #[derive(Clone, Constructor, Debug, Default, Deserialize, Eq, From, Hash, PartialEq, Serialize)]
 pub struct Document {
@@ -53,7 +53,14 @@ impl Document {
     pub(crate) fn set_mode(&mut self, mode: &str) {
         warn!("[TODO] Document::set_mode({:?})", mode)
     }
-    pub(crate) fn push<N: Into<Node>>(&mut self, node: N) {
-        warn!("[TODO] Document::push({:?})", node.into())
+    pub(crate) fn push_element(&mut self, elem: Element) {
+        if let Some(ref mut _element) = self.element {
+            warn!("[TODO] Document::push_element({:?})", elem)
+        } else {
+            self.element = Some(elem)
+        }
+    }
+    pub(crate) fn push_comment(&mut self, elem: Comment) {
+            warn!("[TODO] Document::push_comment({:?})", elem)
     }
 }

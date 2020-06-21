@@ -41,7 +41,7 @@ where
             let elem = dom::Element::new_html(tag.name.clone());
             // TODO: We shouldn't be cloning here, I'm guessing we'll need RC,
             // but then how to mutate? When do we need to mutate?
-            parser.document.push(elem.clone());
+            parser.document.push_element(elem.clone());
             parser.open_elements.push(elem);
 
             // TODO: If the Document is being loaded as part of navigation of a browsing context and the result of executing Is environment settings object a secure context? on the Document's relevant settings object is true, then:
