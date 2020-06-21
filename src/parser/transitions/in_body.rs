@@ -80,7 +80,40 @@ where
             todo!("InBody::on_token('frameset')");
         }
         Token::Eof => {
-            warn!("TODO: EOF");
+            // TODO: If the stack of template insertion modes is not empty, then process the token using the rules for the "in template" insertion mode.
+
+            let has_unexpected_elem = parser
+                .open_elements
+                .iter()
+                .filter(|e| {
+                    let elem = e.borrow();
+                    let name = elem.name();
+
+                    name != &TagName::Dd
+                        && name != &TagName::Dt
+                        && name != &TagName::Li
+                        && name != &TagName::Optgroup
+                        && name != &TagName::Option
+                        && name != &TagName::P
+                        && name != &TagName::Rb
+                        && name != &TagName::Rp
+                        && name != &TagName::Rt
+                        && name != &TagName::Rtc
+                        && name != &TagName::Tbody
+                        && name != &TagName::Td
+                        && name != &TagName::Tfoot
+                        && name != &TagName::Th
+                        && name != &TagName::Thead
+                        && name != &TagName::Tr
+                        && name != &TagName::Body
+                        && name != &TagName::Html
+                })
+                .count()
+                > 0;
+            if has_unexpected_elem {
+                parse_error("Unexpected element(s) in stack of open elements");
+            }
+
             States::term().into_transition_result()
         }
         Token::EndTag(tag) if tag.name == TagName::Body => {
