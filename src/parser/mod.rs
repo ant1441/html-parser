@@ -62,7 +62,6 @@ where
                 if self.reprocess { "R" } else { "-" },
                 insertion_mode
             );
-            trace!("Document: {:?}", self.document);
             let res = match insertion_mode {
                 States::Term(_) => return,
                 _ => {
@@ -71,10 +70,10 @@ where
                     } else {
                         self.last_token.take().unwrap()
                     };
-                    // self.last_token = Some(token);
 
                     // tree construction dispatcher
                     if self.is_tree_construction_first_case(&token) {
+                        trace!("Received token {:?}", token);
                         let ret = insertion_mode.on_token(self, &token);
                         self.last_token = Some(token);
                         ret
@@ -90,6 +89,7 @@ where
                 panic!("Parser error: {}", next_state_error);
             }
 
+            trace!("Document: {:?}", self.document);
             self.reprocess = res.reprocess();
             self.insertion_mode = Some(res.state().unwrap());
         }
