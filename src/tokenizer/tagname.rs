@@ -1,5 +1,6 @@
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
+use log::warn;
 
 #[derive(Clone, Display, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum TagName {
@@ -140,6 +141,17 @@ pub enum TagName {
     Video,
     Wbr,
     Xmp,
+
+    Mglyph,
+    Malignmark,
+    AnnotationXml,
+    Mi,
+    Mo,
+    Mn,
+    Ms,
+    Mtext,
+    ForeignObject,
+    Desc,
 
     Other(String),
 }
@@ -319,7 +331,22 @@ impl std::str::FromStr for TagName {
             "wbr" => Ok(TagName::Wbr),
             "xmp" => Ok(TagName::Xmp),
 
-            _ => Ok(TagName::Other(s.to_string())),
+            // MathML / SVG
+            "mglyph" => Ok(TagName::Mglyph),
+            "malignmark" => Ok(TagName::Malignmark),
+            "annotation-xml" => Ok(TagName::AnnotationXml),
+            "mi" => Ok(TagName::Mi),
+            "mo" => Ok(TagName::Mo),
+            "mn" => Ok(TagName::Mn),
+            "ms" => Ok(TagName::Ms),
+            "mtext" => Ok(TagName::Mtext),
+            "foreignObject" => Ok(TagName::ForeignObject),
+            "desc" => Ok(TagName::Desc),
+
+            _ => {
+                warn!("Unknown tag found: {}", s);
+                Ok(TagName::Other(s.to_string()))
+            }
         }
     }
 }
