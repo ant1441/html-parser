@@ -1,6 +1,6 @@
 use crate::{
     dom,
-    parser::{states::*, Parser, TransitionResult},
+    parser::{self, states::*, Parser, TransitionResult},
     tokenizer::{TagName, Token},
 };
 use std::io;

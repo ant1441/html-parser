@@ -8,7 +8,9 @@ use log::{debug, trace};
 
 use crate::{
     dom::{self, Document},
-    parser::{open_elements_stack::OpenElementsStack, states::States, ScriptingFlag, FramesetOkFlag},
+    parser::{
+        open_elements_stack::OpenElementsStack, states::States, FramesetOkFlag, ScriptingFlag,
+    },
     tokenizer::{TagName, Token, Tokenizer},
 };
 
@@ -31,8 +33,8 @@ where
     head_element_pointer: Option<Rc<RefCell<dom::Element>>>,
 
     // Other Parsing state flags
-    scripting: ScriptingFlag,
-    frameset_ok: FramesetOkFlag,
+    pub(super) scripting: ScriptingFlag,
+    pub(super) frameset_ok: FramesetOkFlag,
 }
 
 impl<R> Parser<R>

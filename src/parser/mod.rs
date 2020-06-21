@@ -9,11 +9,13 @@ use states::States;
 use transition_result::TransitionResult;
 pub use parser_struct::Parser;
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ScriptingFlag {
     Enabled,
     Disabled,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum FramesetOkFlag {
     Ok,
     NotOk,

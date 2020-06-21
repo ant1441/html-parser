@@ -2,7 +2,7 @@ use log::warn;
 
 use crate::{
     dom,
-    parser::{states::*, Parser, TransitionResult},
+    parser::{self, states::*, Parser, TransitionResult},
     tokenizer::{TagName, Token},
 };
 use std::io;
@@ -217,6 +217,207 @@ where
         Token::StartTag(tag) if tag.name == TagName::Button => {
             todo!("InBody::on_token('button')");
         }
-        _ => todo!("InBody::on_token(_)"),
+        Token::EndTag(tag)
+            if (tag.name == TagName::Address
+                || tag.name == TagName::Article
+                || tag.name == TagName::Aside
+                || tag.name == TagName::Blockquote
+                || tag.name == TagName::Button
+                || tag.name == TagName::Center
+                || tag.name == TagName::Details
+                || tag.name == TagName::Dialog
+                || tag.name == TagName::Dir
+                || tag.name == TagName::Div
+                || tag.name == TagName::Dl
+                || tag.name == TagName::Fieldset
+                || tag.name == TagName::Figcaption
+                || tag.name == TagName::Figure
+                || tag.name == TagName::Footer
+                || tag.name == TagName::Header
+                || tag.name == TagName::Hgroup
+                || tag.name == TagName::Listing
+                || tag.name == TagName::Main
+                || tag.name == TagName::Menu
+                || tag.name == TagName::Nav
+                || tag.name == TagName::Ol
+                || tag.name == TagName::Pre
+                || tag.name == TagName::Section
+                || tag.name == TagName::Summary
+                || tag.name == TagName::Ul) =>
+        {
+            todo!("InBody::on_token(EndTag('address|...'))");
+        }
+        Token::EndTag(tag) if tag.name == TagName::Form => {
+            todo!("InBody::on_token(EndTag('form'))");
+        }
+        Token::EndTag(tag) if tag.name == TagName::P => {
+            todo!("InBody::on_token(EndTag('p'))");
+        }
+        Token::EndTag(tag) if tag.name == TagName::Li => {
+            todo!("InBody::on_token(EndTag('li'))");
+        }
+        Token::EndTag(tag) if (tag.name == TagName::Dd || tag.name == TagName::Dt) => {
+            todo!("InBody::on_token(EndTag('dd|dt'))");
+        }
+        Token::EndTag(tag)
+            if (tag.name == TagName::H1
+                || tag.name == TagName::H2
+                || tag.name == TagName::H3
+                || tag.name == TagName::H4
+                || tag.name == TagName::H5
+                || tag.name == TagName::H6) =>
+        {
+            todo!("InBody::on_token(EndTag('hN|...'))");
+        }
+        Token::EndTag(tag) if tag.name == TagName::Other("sarcasm".to_string()) => {
+            panic!("This parser is very serious")
+        }
+        Token::StartTag(tag) if tag.name == TagName::A => {
+            todo!("InBody::on_token('a')");
+        }
+        Token::StartTag(tag)
+            if (tag.name == TagName::B
+                || tag.name == TagName::Big
+                || tag.name == TagName::Code
+                || tag.name == TagName::Em
+                || tag.name == TagName::Font
+                || tag.name == TagName::I
+                || tag.name == TagName::S
+                || tag.name == TagName::Small
+                || tag.name == TagName::Strike
+                || tag.name == TagName::Strong
+                || tag.name == TagName::Tt
+                || tag.name == TagName::U) =>
+        {
+            todo!("InBody::on_token('b|...')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Nobr => {
+            todo!("InBody::on_token('nobr')");
+        }
+        Token::EndTag(tag)
+            if (tag.name == TagName::A
+                || tag.name == TagName::B
+                || tag.name == TagName::Big
+                || tag.name == TagName::Code
+                || tag.name == TagName::Em
+                || tag.name == TagName::Font
+                || tag.name == TagName::I
+                || tag.name == TagName::Nobr
+                || tag.name == TagName::S
+                || tag.name == TagName::Small
+                || tag.name == TagName::Strike
+                || tag.name == TagName::Strong
+                || tag.name == TagName::Tt
+                || tag.name == TagName::U) =>
+        {
+            todo!("InBody::on_token(EndTag('b|...'))");
+        }
+        Token::StartTag(tag)
+            if (tag.name == TagName::Applet
+                || tag.name == TagName::Marquee
+                || tag.name == TagName::Object) =>
+        {
+            todo!("InBody::on_token('applet|...')");
+        }
+        Token::EndTag(tag)
+            if (tag.name == TagName::Applet
+                || tag.name == TagName::Marquee
+                || tag.name == TagName::Object) =>
+        {
+            todo!("InBody::on_token(endTag('applet|...'))");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Table => {
+            todo!("InBody::on_token('table')");
+        }
+        Token::EndTag(tag) if tag.name == TagName::Br => {
+            todo!("InBody::on_token('br')");
+        }
+        Token::StartTag(tag)
+            if (tag.name == TagName::Area
+                || tag.name == TagName::Br
+                || tag.name == TagName::Embed
+                || tag.name == TagName::Img
+                || tag.name == TagName::Keygen
+                || tag.name == TagName::Wbr) =>
+        {
+            todo!("InBody::on_token('area|...')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Input => {
+            todo!("InBody::on_token('input')");
+        }
+        Token::StartTag(tag)
+            if (tag.name == TagName::Param
+                || tag.name == TagName::Source
+                || tag.name == TagName::Track) =>
+        {
+            todo!("InBody::on_token('param|...')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Hr => {
+            todo!("InBody::on_token('hr')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Other("image".to_string()) => {
+            todo!("InBody::on_token('image')");
+
+            // Don't ask, apparently
+            tag.name = TagName::Img;
+
+            let mut ret = current_state.into_transition_result();
+            ret.set_reprocess();
+            ret
+        }
+        Token::StartTag(tag) if tag.name == TagName::Textarea => {
+            todo!("InBody::on_token('textarea')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Xmp => {
+            todo!("InBody::on_token('xmp')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Iframe => {
+            todo!("InBody::on_token('iframe')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Noembed => {
+            todo!("InBody::on_token('noembed')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Noscript && parser.scripting == parser::ScriptingFlag::Enabled => {
+            todo!("InBody::on_token('noscript')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Select => {
+            todo!("InBody::on_token('select')");
+        }
+        Token::StartTag(tag) if (tag.name == TagName::Optgroup || tag.name == TagName::Option) => {
+            todo!("InBody::on_token('Optgroup|option')");
+        }
+        Token::StartTag(tag) if (tag.name == TagName::Rb || tag.name == TagName::Rtc) => {
+            todo!("InBody::on_token('rb|rtc')");
+        }
+        Token::StartTag(tag) if (tag.name == TagName::Rp || tag.name == TagName::Rt) => {
+            todo!("InBody::on_token('rp|rt')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Math => {
+            todo!("InBody::on_token('math')");
+        }
+        Token::StartTag(tag) if tag.name == TagName::Svg => {
+            todo!("InBody::on_token('svg')");
+        }
+        Token::StartTag(tag)
+            if (tag.name == TagName::Caption
+                || tag.name == TagName::Col
+                || tag.name == TagName::Colgroup
+                || tag.name == TagName::Frame
+                || tag.name == TagName::Head
+                || tag.name == TagName::Tbody
+                || tag.name == TagName::Td
+                || tag.name == TagName::Tfoot
+                || tag.name == TagName::Th
+                || tag.name == TagName::Thead
+                || tag.name == TagName::Tr) =>
+        {
+            todo!("InBody::on_token('caption|...')");
+        }
+        Token::StartTag(_tag) => {
+            todo!("InBody::on_token(StartTag(_))");
+        }
+        Token::EndTag(_tag) => {
+            todo!("InBody::on_token(EndTag(_))");
+        }
     }
 }
