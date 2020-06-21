@@ -4,12 +4,14 @@ use serde::{Deserialize, Serialize};
 mod comment;
 mod document;
 mod document_fragment;
+mod namespace;
 mod document_type;
 mod element;
 mod processing_instruction;
 mod text;
 
 pub use comment::Comment;
+pub use namespace::Namespace;
 pub use document::Document;
 pub use document_fragment::DocumentFragment;
 pub use document_type::DocumentType;
