@@ -67,6 +67,7 @@ where
 
             let num_open_elements = self.open_elements.len();
             debug!(
+                target: "html_parser::parser",
                 "State ({}) [{:3} elements]: {:?}",
                 if self.reprocess { "R" } else { "-" },
                 num_open_elements,
@@ -83,7 +84,7 @@ where
 
                     // tree construction dispatcher
                     if self.is_tree_construction_first_case(&token) {
-                        trace!("Received token {:?}", token);
+                        trace!(target: "html_parser::parser", "Received token {:?}", token);
                         let ret = insertion_mode.on_token(self, &token);
                         self.last_token = Some(token);
                         ret
@@ -99,7 +100,7 @@ where
                 panic!("Parser error: {}", next_state_error);
             }
 
-            trace!("Document: {:#?}", self.document);
+            trace!(target: "html_parser::parser", "Document: {:#?}", self.document);
             self.reprocess = res.reprocess();
             self.insertion_mode = Some(res.state().unwrap());
         }
@@ -123,13 +124,13 @@ where
         let mut target = target.borrow_mut();
         if pos > 0 {
             if let Some(dom::ElementChildNode::Text(text)) = target.get_mut(pos - 1) {
-                trace!("Appending char at position {}", pos - 1);
+                trace!(target: "html_parser::parser", "Appending char at position {}", pos - 1);
                 let mut text = text.borrow_mut();
                 return text.push_str(data.as_ref());
             }
         }
         let node = dom::Text::new(data.as_ref().to_string());
-        trace!("Inserting char {:?} at position {}", node, pos);
+        trace!(target: "html_parser::parser", "Inserting char {:?} at position {}", node, pos);
         target.insert(pos, node.into());
     }
 
@@ -152,7 +153,7 @@ where
             ) {
                 break;
             }
-            trace!("generate_implied_end_tags: Popping {} off stack", name);
+            trace!(target: "html_parser::parser", "generate_implied_end_tags: Popping {} off stack", name);
             self.open_elements.pop();
         }
     }
