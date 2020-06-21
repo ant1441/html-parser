@@ -3,10 +3,8 @@ use std::{error, fmt};
 use auto_enums::enum_derive;
 use derive_more::From;
 
+use super::States;
 
-use super::{ States};
-
-pub type TransitionResult = ();
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[enum_derive(Error, From)]
