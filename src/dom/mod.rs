@@ -1,6 +1,4 @@
 use derive_more::From;
-use serde::{Deserialize, Serialize};
-
 mod comment;
 mod document;
 mod document_fragment;
@@ -19,7 +17,7 @@ pub use element::{Element, ElementChildNode};
 pub use processing_instruction::ProcessingInstruction;
 pub use text::Text;
 
-#[derive(Clone, Debug, Deserialize, Eq, From, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, From, PartialEq)]
 pub enum Node {
     Document(Document),
     DocumentType(DocumentType),

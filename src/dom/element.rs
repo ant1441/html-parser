@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use derive_more::{From, Deref, DerefMut};
 use serde::{Deserialize, Serialize};
 
@@ -45,12 +48,13 @@ impl Element {
         self.namespace
     }
 
-    pub fn new_html(name: TagName) -> Self {
-        Element {
+    pub fn new_html(name: TagName) -> Rc<RefCell<Self>> {
+        let elem = Element {
             name,
             namespace: Default::default(),
             children: Vec::new(),
-        }
+        };
+        Rc::new(RefCell::new(elem))
     }
 
     /// https://html.spec.whatwg.org/multipage/parsing.html#mathml-text-integration-point

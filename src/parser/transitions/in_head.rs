@@ -84,7 +84,7 @@ where
             {
                 // Pop the current node (which will be the head element) off the stack of open elements.
                 let elem = parser.open_elements.pop().expect("Expected element on the stack of open elements");
-                if elem.name() != &TagName::Head {
+                if elem.borrow().name() != &TagName::Head {
                     panic!("Unexpected element on the stack of open elements: {:?}", elem);
                 }
 

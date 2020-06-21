@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
 use std::io;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use log::{debug, trace};
 
@@ -31,10 +33,11 @@ where
     reprocess: bool,
     last_token: Option<Token>,
 
+    // TODO open_elements 
     open_elements: OpenElementsStack,
 
     // Element pointsers
-    head_element_pointer: Option<dom::Element>,
+    head_element_pointer: Option<Rc<RefCell<dom::Element>>>,
 }
 
 impl<R> Parser<R>
@@ -102,12 +105,13 @@ where
         }
     }
 
-    fn set_head(&mut self, head_elem: dom::Element) {
+    fn set_head(&mut self, head_elem: Rc<RefCell<dom::Element>>) {
         self.head_element_pointer = Some(head_elem);
     }
 
     fn insert_character<C: AsRef<str>>(&mut self, data: C) {
         let (target, pos) = self.appropriate_place_for_inserting_a_node(None).unwrap();
+        let mut target = target.borrow_mut();
         if pos > 0 {
             if let Some(dom::ElementChildNode::Text(ref mut text)) = target.get_mut(pos - 1) {
                 return text.push_str(data.as_ref());
@@ -115,7 +119,6 @@ where
         }
         let node = dom::Text::new(data.as_ref().to_string());
         target.insert(pos, node.into());
-        dbg!(target);
     }
 
     // Returning the parent element and the index to insert at
@@ -124,17 +127,17 @@ where
     fn appropriate_place_for_inserting_a_node(
         &mut self,
         r#override: Option<()>,
-    ) -> Option<(&mut dom::Element, usize)> {
+    ) -> Option<(Rc<RefCell<dom::Element>>, usize)> {
         if r#override.is_some() {
             todo!("Parser::appropriate_place_for_inserting_a_node with override")
         }
-        let target = self.current_node_mut()?;
+        let target = self.current_node()?;
 
         // TODO: foster parenting
-        if target.name() == &TagName::Template {
+        if target.borrow().name() == &TagName::Template {
             todo!("Parser::appropriate_place_for_inserting_a_node in template")
         }
-        let pos = target.len();
+        let pos = target.borrow().len();
 
         Some((target, pos))
     }
@@ -149,19 +152,20 @@ where
         let adjusted_current_node = self.adjusted_current_node().expect(
             "No adjusted_current_node when there are elements on the stack of open elements",
         );
+        let node = adjusted_current_node.borrow();
         let is_token_start_tag = token.is_start_tag();
         let is_token_character = token.is_start_tag();
         let is_token_eof = token.is_eof();
         let token_tag_name = token.tag_name();
 
         // If the adjusted current node is an element in the HTML namespace
-        if adjusted_current_node.namespace() == dom::Namespace::HTML {
+        if node.namespace() == dom::Namespace::HTML {
             return true;
         }
 
         // If the adjusted current node is a MathML text integration point and
         // the token is a start tag whose tag name is neither "mglyph" nor "malignmark"
-        if adjusted_current_node.is_mathml_text_integration_point()
+        if node.is_mathml_text_integration_point()
             && is_token_start_tag
             && (token_tag_name != Some(&TagName::Mglyph)
                 && token_tag_name != Some(&TagName::Malignmark))
@@ -171,13 +175,13 @@ where
 
         // If the adjusted current node is a MathML text integration point and
         // the token is a character token
-        if adjusted_current_node.is_mathml_text_integration_point() && is_token_character {
+        if node.is_mathml_text_integration_point() && is_token_character {
             return true;
         }
 
         // If the adjusted current node is a MathML annotation-xml element and
         // the token is a start tag whose tag name is "svg"
-        if adjusted_current_node.name() == &TagName::AnnotationXml
+        if node.name() == &TagName::AnnotationXml
             && is_token_start_tag
             && token_tag_name == Some(&TagName::Svg)
         {
@@ -186,13 +190,13 @@ where
 
         // If the adjusted current node is an HTML integration point and
         // the token is a start tag
-        if adjusted_current_node.is_html_integration_point() && is_token_start_tag {
+        if node.is_html_integration_point() && is_token_start_tag {
             return true;
         }
 
         // If the adjusted current node is an HTML integration point and
         // the token is a character token
-        if adjusted_current_node.is_html_integration_point() && is_token_character {
+        if node.is_html_integration_point() && is_token_character {
             return true;
         }
 
@@ -204,7 +208,7 @@ where
         false
     }
 
-    pub fn adjusted_current_node(&self) -> Option<&dom::Element> {
+    pub fn adjusted_current_node(&self) -> Option<Rc<RefCell<dom::Element>>> {
         if
         /* self.parsing_algorithm == HTMLFragmentParsing && self.open_elements.len() == 1 */
         false {
@@ -214,11 +218,7 @@ where
         }
     }
 
-    pub fn current_node(&self) -> Option<&dom::Element> {
-        self.open_elements.last()
-    }
-
-    pub fn current_node_mut(&mut self) -> Option<&mut dom::Element> {
-        self.open_elements.last_mut()
+    pub fn current_node(&self) -> Option<Rc<RefCell<dom::Element>>> {
+        self.open_elements.last().map(|e| Rc::clone(e))
     }
 }

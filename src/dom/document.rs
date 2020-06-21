@@ -1,17 +1,20 @@
 #![allow(dead_code)]
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use derive_more::{Constructor, From};
 use log::warn;
 use serde::{Deserialize, Serialize};
 
 use super::{Comment, DocumentType, Element, ProcessingInstruction};
 
-#[derive(Clone, Constructor, Debug, Default, Deserialize, Eq, From, Hash, PartialEq, Serialize)]
+#[derive(Clone, Constructor, Debug, Default, Eq, From, PartialEq)]
 pub struct Document {
     first_children: Vec<DocumentChildNode>,
     document_type: Option<DocumentType>,
     second_children: Vec<DocumentChildNode>,
-    element: Option<Element>,
+    element: Option<Rc<RefCell<Element>>>,
     third_children: Vec<DocumentChildNode>,
 }
 
@@ -26,7 +29,7 @@ impl Document {
         self.first_children.len()
             + if self.document_type.is_some() { 1 } else { 0 }
             + self.second_children.len()
-            + self.element.as_ref().map_or(0, |e| e.len())
+            + self.element.as_ref().map_or(0, |e| e.borrow().len())
             + self.third_children.len()
     }
 
@@ -34,8 +37,8 @@ impl Document {
     ///
     /// ## Note
     /// Per the node tree constraints, there can be only one such element.
-    pub fn document_element(&self) -> Option<&Element> {
-        self.element.as_ref()
+    pub fn document_element(&self) -> Option<Rc<RefCell<Element>>> {
+        self.element.clone()
     }
 
     pub(crate) fn add_document_type(&mut self, document_type: DocumentType) {
@@ -47,13 +50,10 @@ impl Document {
         self.document_type = Some(document_type)
     }
 
-    pub(crate) fn set_head(&mut self, head: Element) {
-        warn!("[TODO] Document::set_head({:?})", head)
-    }
     pub(crate) fn set_mode(&mut self, mode: &str) {
         warn!("[TODO] Document::set_mode({:?})", mode)
     }
-    pub(crate) fn push_element(&mut self, elem: Element) {
+    pub(crate) fn push_element(&mut self, elem: Rc<RefCell<Element>>) {
         if let Some(ref mut _element) = self.element {
             warn!("[TODO] Document::push_element({:?})", elem)
         } else {
@@ -62,5 +62,16 @@ impl Document {
     }
     pub(crate) fn push_comment(&mut self, elem: Comment) {
             warn!("[TODO] Document::push_comment({:?})", elem)
+    }
+}
+
+trait DocumentInterface {
+    // Dunno where this is in the IDL...
+    fn doctype(&self) -> Option<&DocumentType>;
+}
+
+impl DocumentInterface for Document {
+    fn doctype(&self) -> Option<&DocumentType> {
+        self.document_type.as_ref()
     }
 }

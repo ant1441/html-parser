@@ -96,7 +96,8 @@ where
                 .open_elements
                 .iter()
                 .filter(|e| {
-                    let name = e.name();
+                    let elem = e.borrow();
+                    let name = elem.name();
 
                     name != &TagName::Dd
                         && name != &TagName::Dt

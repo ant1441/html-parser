@@ -1,9 +1,8 @@
 use derive_more::{Constructor, From};
-use serde::{Deserialize, Serialize};
 
 use super::Node;
 
-#[derive(Clone, Constructor, Debug, Default, Deserialize, Eq, From, Hash, PartialEq, Serialize)]
+#[derive(Clone, Constructor, Debug, Default, Eq, From, PartialEq)]
 pub struct DocumentFragment {
     children: Vec<Node>,
 }
