@@ -349,7 +349,27 @@ where
             panic!("This parser is very serious")
         }
         Token::StartTag(tag) if tag.name == TagName::A => {
-            todo!("InBody::on_token('a')");
+            if parser
+                .list_of_active_formatting_elements
+                .iter()
+                .rev()
+                .take_while(|e| !e.is_marker())
+                .any(|e| e.is_element(&TagName::A))
+            {
+                parse_error("Existing A in active formatting elements");
+                // run the adoption agency algorithm for the token,
+                // then remove that element from the list of active formatting elements and
+                // the stack of open elements if the adoption agency algorithm
+                // didn't already remove it (it might not have if the element is not in table scope).
+                todo!("InBody::on_token('a')");
+            }
+            warn!("[TODO] InBody: 'A' - Reconstruct the active formatting elements, if any.");
+            let node = dom::Element::new_html(tag.name.clone());
+            parser.insert_html_element(node.clone());
+
+            parser.list_of_active_formatting_elements.push(node.into());
+
+            current_state.into_transition_result()
         }
         Token::StartTag(tag)
             if (tag.name == TagName::B
