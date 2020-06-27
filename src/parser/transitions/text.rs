@@ -18,24 +18,20 @@ impl Text {
     where
         R: io::Read + io::Seek,
     {
-        transition(States::from(self), parser, t)
-    }
-}
-
-pub(super) fn transition<R>(
-    current_state: States,
-    parser: &mut Parser<R>,
-    t: &Token,
-) -> TransitionResult
-where
-    R: io::Read + io::Seek,
-{
     match t {
         Token::Character('\0') => unreachable!(),
         Token::Character(ch) => {
             parser.insert_character(ch.to_string());
-            current_state.into_transition_result()
+            States::from(self).into_transition_result()
         }
-        _ => todo!("Text::on_token(_)"),
+        Token::EndTag(tag) if tag.name == TagName::Script => {
+            todo!("Text::on_token(</script>)")
+        }
+        Token::EndTag(_) => {
+            parser.open_elements.pop();
+            self.original_insertion_mode.into_transition_result()
+        }
+        _ => unreachable!("Parser - Text State"),
     }
+}
 }

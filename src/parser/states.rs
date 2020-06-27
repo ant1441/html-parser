@@ -82,7 +82,9 @@ pub(super) struct AfterHead {}
 pub(super) struct InBody {}
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct Text {}
+pub(super) struct Text {
+    pub(super) original_insertion_mode: Box<States>,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct InTable {}
@@ -166,8 +168,8 @@ impl States {
         States::InBody(InBody {})
     }
 
-    pub(super) fn text() -> Self {
-        States::Text(Text {})
+    pub(super) fn text(original_insertion_mode: Box<States>) -> Self {
+        States::Text(Text { original_insertion_mode })
     }
 
     pub(super) fn in_table() -> Self {
