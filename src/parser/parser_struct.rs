@@ -139,7 +139,7 @@ where
         target.insert(pos, node.into());
     }
 
-    pub(super) fn generate_implied_end_tags(&mut self) {
+    pub(super) fn generate_implied_end_tags(&mut self, except: Option<&TagName>) {
         while let Some(node) = self.current_node() {
             let node = node.borrow();
             let name = node.name();
@@ -155,7 +155,8 @@ where
                     | TagName::Rp
                     | TagName::Rt
                     | TagName::Rtc
-            ) {
+            ) || Some(name) == except
+            {
                 break;
             }
             trace!(target: "html_parser::parser", "generate_implied_end_tags: Popping {} off stack", name);

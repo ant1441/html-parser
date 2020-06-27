@@ -307,7 +307,7 @@ where
                 return current_state.into_transition_result();
             }
 
-            parser.generate_implied_end_tags();
+            parser.generate_implied_end_tags(None);
             let current_node = parser.current_node().unwrap();
             let current_node = current_node.borrow();
             if !(current_node.namespace == Namespace::HTML && current_node.name == tag.name) {
