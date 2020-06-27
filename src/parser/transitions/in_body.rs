@@ -514,11 +514,56 @@ where
         {
             todo!("InBody::on_token('caption|...')");
         }
-        Token::StartTag(_tag) => {
-            todo!("InBody::on_token(StartTag(_))");
+        Token::StartTag(tag) => {
+            warn!("[TODO] InBody: '_' - Reconstruct the active formatting elements, if any.");
+
+            let node = dom::Element::new_html(tag.name.clone());
+            parser.insert_html_element(node);
+
+            current_state.into_transition_result()
         }
-        Token::EndTag(_tag) => {
-            todo!("InBody::on_token(EndTag(_))");
+        Token::EndTag(tag) => {
+            let open_elements_len = parser.open_elements.len();
+            let mut i = parser.open_elements.len() - 1;
+            let mut node = parser.open_elements.get(i).unwrap();
+            let mut node_is_current_node = true;
+
+            trace!(
+                "InBody::on_token(EndTag(_)) - Finding matching Node for {:?}",
+                tag
+            );
+            loop {
+                trace!("InBody::on_token(EndTag(_)) - Node: {:?}", node);
+                if node.borrow().is_html() && node.borrow().name() == &tag.name {
+                    warn!("[TODO] InBody: _  - Generate implied end tags");
+                    // Generate implied end tags, except for HTML elements with the same tag name as the token.
+                    if !node_is_current_node {
+                        parse_error("");
+                    }
+
+                    // Pop all the nodes from the current node up to node, including node, then stop these steps.
+                    trace!(
+                        "InBody::on_token(EndTag(_)) - Popping {} element(s)",
+                        open_elements_len - i
+                    );
+                    while i != open_elements_len {
+                        let e = parser.open_elements.pop();
+                        trace!("InBody::on_token(EndTag(_)) - Popped {:?}", e);
+                        i += 1;
+                    }
+
+                    break;
+                } else if node.borrow().category() == dom::Category::Special {
+                    parse_error("Special Node found in body");
+                    return current_state.into_transition_result();
+                }
+
+                node_is_current_node = false;
+                i -= 1;
+                node = parser.open_elements.get(i).unwrap();
+            }
+
+            current_state.into_transition_result()
         }
     }
 }
