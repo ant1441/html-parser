@@ -98,7 +98,7 @@ impl RawText {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(U_LESS_THAN_SIGN) => {
-                States::raw_text_less_than_sign().into_transition_result()
+                States::raw_text_less_than_sign(self.tmp).into_transition_result()
             }
             Character::Char(U_NULL) => {
                 let mut ret = States::from(self).into_transition_result();
@@ -386,6 +386,115 @@ impl RcDataEndTagName {
         } else {
             panic!(
                 "Unexpected token in RcDataEndTagName::is_appropriate_end_tag_token: {:?}",
+                self.token
+            );
+        }
+    }
+}
+
+impl RawTextLessThanSign {
+    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
+        match c {
+            Character::Char(U_SOLIDUS) => {
+                self.tmp = String::new();
+                States::raw_text_end_tag_open(self.tmp).into_transition_result()
+            }
+            _ => {
+                let mut ret = States::raw_text(self.tmp).into_transition_result();
+                ret.push_emit(U_LESS_THAN_SIGN);
+                ret.set_reconsume();
+                ret
+            }
+        }
+    }
+}
+
+impl RawTextEndTagOpen {
+    pub(super) fn on_character(self, c: Character) -> TransitionResult {
+        match c {
+            Character::Char(a) if a.is_alphabetic() => {
+                let token: EndTag = Default::default();
+
+                let mut ret = States::raw_text_end_tag_name(token, self.tmp).into_transition_result();
+                ret.set_reconsume();
+                ret
+            }
+            _ => {
+                let mut ret = States::raw_text(self.tmp).into_transition_result();
+                ret.push_emit(U_LESS_THAN_SIGN);
+                ret.push_emit(U_SOLIDUS);
+                ret.set_reconsume();
+                ret
+            }
+        }
+    }
+}
+
+impl RawTextEndTagName {
+    pub(super) fn on_character_and_last_start_tag(mut self, c: CharacterAndLastStartTag) -> TransitionResult {
+        let (c, last_start_tag_emitted) = c.into();
+        match c {
+            Character::Char(U_CHARACTER_TABULATION)
+            | Character::Char(U_LINE_FEED)
+            | Character::Char(U_FORM_FEED)
+            | Character::Char(U_SPACE)
+                if self.is_appropriate_end_tag_token(&last_start_tag_emitted) =>
+            {
+                States::before_attribute_name(self.token).into_transition_result()
+            }
+            Character::Char(U_SOLIDUS) if self.is_appropriate_end_tag_token(&last_start_tag_emitted) => {
+                States::self_closing_start_tag(self.token).into_transition_result()
+            }
+            Character::Char(U_GREATER_THAN_SIGN) if self.is_appropriate_end_tag_token(&last_start_tag_emitted) => {
+                let mut ret = States::data().into_transition_result();
+                ret.push_emit(self.token);
+                ret
+            }
+            Character::Char(c) if c.is_ascii_uppercase() => {
+                self.token.push(c.to_lowercase().next().unwrap());
+                self.tmp.push(c);
+
+                States::from(self).into_transition_result()
+            }
+            Character::Char(c) if c.is_ascii_lowercase() => {
+                self.token.push(c);
+                self.tmp.push(c);
+
+                States::from(self).into_transition_result()
+            }
+            _ => {
+                // TODO ownership
+                let tmp = self.tmp.clone();
+
+                let mut ret = States::raw_text(self.tmp).into_transition_result();
+                ret.push_emit(U_LESS_THAN_SIGN);
+                ret.push_emit(U_SOLIDUS);
+                for c in tmp.chars() {
+                    ret.push_emit(c);
+                }
+                ret.set_reconsume();
+
+                ret
+            }
+        }
+    }
+
+    // An appropriate end tag token is an end tag token whose tag name matches
+    // the tag name of the last start tag to have been emitted from this
+    // tokenizer, if any.
+    // If no start tag has been emitted from this tokenizer, then no end tag
+    // token is appropriate.
+    fn is_appropriate_end_tag_token(&self, last_start_tag_emitted: &Option<token::StartTag>) -> bool {
+        if let Token::EndTag(ref token) = self.token {
+            if let Some(tag) = last_start_tag_emitted {
+                if tag.name == token.name {
+                    return true;
+                }
+            }
+            false
+        } else {
+            panic!(
+                "Unexpected token in RawTextEndTagName::is_appropriate_end_tag_token: {:?}",
                 self.token
             );
         }

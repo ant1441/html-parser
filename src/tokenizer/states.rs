@@ -1,6 +1,10 @@
 use derive_more::{AsRef, Deref, DerefMut, Display, From, Into};
 
-use super::{errors, token::{self, Token}, Codepoint, TransitionResult};
+use super::{
+    errors,
+    token::{self, Token},
+    Codepoint, TransitionResult,
+};
 
 macro_rules! create_states {
     ($($s:ident,)+) => {
@@ -124,7 +128,9 @@ pub(super) struct RcData {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct RawText {}
+pub(super) struct RawText {
+    pub(crate) tmp: String,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct ScriptData {}
@@ -160,13 +166,20 @@ pub(super) struct RcDataEndTagName {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct RawTextLessThanSign {}
+pub(super) struct RawTextLessThanSign {
+    pub(crate) tmp: String,
+}
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct RawTextEndTagOpen {}
+pub(super) struct RawTextEndTagOpen {
+    pub(crate) tmp: String,
+}
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct RawTextEndTagName {}
+pub(super) struct RawTextEndTagName {
+    pub(crate) token: Token,
+    pub(crate) tmp: String,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct ScriptDataLessThanSign {}
@@ -454,8 +467,10 @@ impl States {
         })
     }
 
-    pub(super) fn raw_text() -> Self {
-        States::RawText(RawText {})
+    pub(super) fn raw_text<TMP: ToString>(tmp: TMP) -> Self {
+        States::RawText(RawText {
+            tmp: tmp.to_string(),
+        })
     }
 
     pub(super) fn script_data() -> Self {
@@ -499,16 +514,23 @@ impl States {
         })
     }
 
-    pub(super) fn raw_text_less_than_sign() -> Self {
-        States::RawTextLessThanSign(RawTextLessThanSign {})
+    pub(super) fn raw_text_less_than_sign<TMP: ToString>(tmp: TMP) -> Self {
+        States::RawTextLessThanSign(RawTextLessThanSign {
+            tmp: tmp.to_string(),
+        })
     }
 
-    pub(super) fn raw_text_end_tag_open() -> Self {
-        States::RawTextEndTagOpen(RawTextEndTagOpen {})
+    pub(super) fn raw_text_end_tag_open<TMP: ToString>(tmp: TMP) -> Self {
+        States::RawTextEndTagOpen(RawTextEndTagOpen {
+            tmp: tmp.to_string(),
+        })
     }
 
-    pub(super) fn raw_text_end_tag_name() -> Self {
-        States::RawTextEndTagName(RawTextEndTagName {})
+    pub(super) fn raw_text_end_tag_name<T: Into<Token>, TMP: ToString>(token: T, tmp: TMP) -> Self {
+        States::RawTextEndTagName(RawTextEndTagName {
+            token: token.into(),
+            tmp: tmp.to_string(),
+        })
     }
 
     pub(super) fn script_data_less_than_sign() -> Self {
@@ -892,8 +914,8 @@ impl States {
             RcDataLessThanSign(state) => state.on_character(input),
             RcDataEndTagOpen(state) => state.on_character(input),
             // RcDataEndTagName(state) => (see on_character_and_last_start_tag)
-            // RawTextLessThanSign(state) => state.on_character(input),
-            // RawTextEndTagOpen(state) => state.on_character(input),
+            RawTextLessThanSign(state) => state.on_character(input),
+            RawTextEndTagOpen(state) => state.on_character(input),
             // RawTextEndTagName(state) => (see on_character_and_last_start_tag)
             // ScriptDataLessThanSign(state) => state.on_character(input),
             // ScriptDataEndTagOpen(state) => state.on_character(input),
@@ -965,15 +987,22 @@ impl States {
         }
     }
 
-    pub(super) fn on_character_and_last_start_tag(self, input: CharacterAndLastStartTag) -> TransitionResult {
+    pub(super) fn on_character_and_last_start_tag(
+        self,
+        input: CharacterAndLastStartTag,
+    ) -> TransitionResult {
         use States::*;
 
         match self {
             RcDataEndTagName(state) => state.on_character_and_last_start_tag(input),
-            // RawTextEndTagName(state) => state.on_character(input),
-            // ScriptDataEndTagName(state) => state.on_character(input),
-            // ScriptDataEscapedEndTagName(state) => state.on_character(input),
-            _ => Err(errors::StateTransitionError::new(self, "CharacterAndLastStartTag")).into(),
+            RawTextEndTagName(state) => state.on_character_and_last_start_tag(input),
+            // ScriptDataEndTagName(state) => state.on_character_and_last_start_tag(input),
+            // ScriptDataEscapedEndTagName(state) => state.on_character_and_last_start_tag(input),
+            _ => Err(errors::StateTransitionError::new(
+                self,
+                "CharacterAndLastStartTag",
+            ))
+            .into(),
         }
     }
 
@@ -1056,7 +1085,4 @@ pub(super) struct NextFewCharacters(Option<String>);
 
 // Is this just needed for NamedCharacterReference?
 #[derive(Clone, Debug, PartialEq, From, Into, AsRef)]
-pub(super) struct PossibleCharacterReferenceWithNextChar(
-    Option<String>,
-    Character,
-);
+pub(super) struct PossibleCharacterReferenceWithNextChar(Option<String>, Character);

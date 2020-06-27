@@ -84,16 +84,19 @@ where
                 parser.generic_rcdata_element_parse(current_state, t)
             }
             Token::StartTag(tag) if tag.name == TagName::Noscript && parser.scripting == ScriptingFlag::Enabled => {
-                todo!("InHead::on_token('noscript') - scripting enabled");
+                parser.generic_raw_text_element_parse(current_state, t)
             }
             Token::StartTag(tag)
                 if (tag.name == TagName::Noframes
                     || tag.name == TagName::Style) =>
             {
-                todo!("InHead::on_token('noframes|style')");
+                parser.generic_raw_text_element_parse(current_state, t)
             }
             Token::StartTag(tag) if tag.name == TagName::Noscript && parser.scripting == ScriptingFlag::Disabled => {
-                todo!("InHead::on_token('noscript') - scripting disabled");
+                let node = dom::Element::new_html(tag.name.clone());
+                parser.insert_html_element(node);
+
+                States::in_head_noscript().into_transition_result()
             }
             Token::StartTag(tag) if tag.name == TagName::Script => {
                 todo!("InHead::on_token('script')");

@@ -80,7 +80,7 @@ where
 
     pub(crate) fn switch_to_rawtext_state(&mut self) {
         trace!("External switch to States::RawText");
-        self.state = Some(States::raw_text())
+        self.state = Some(States::raw_text(String::new()))
     }
 
     pub(crate) fn switch_to_rcdata_state(&mut self) {
