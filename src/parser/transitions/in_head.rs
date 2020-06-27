@@ -1,6 +1,6 @@
 use crate::{
     dom,
-    parser::{encodings, states::*, Parser, TransitionResult},
+    parser::{encodings, states::*, Parser, TransitionResult, ScriptingFlag},
     tokenizer::{TagName, Token},
 };
 use std::io;
@@ -83,16 +83,16 @@ where
                 // Follow the generic RCDATA element parsing algorithm.
                 parser.generic_rcdata_element_parse(current_state, t)
             }
-            Token::StartTag(tag) if tag.name == TagName::Noscript /* && scripting_flag */ => {
-                todo!("InHead::on_token('noscript') - scripting disabled");
+            Token::StartTag(tag) if tag.name == TagName::Noscript && parser.scripting == ScriptingFlag::Enabled => {
+                todo!("InHead::on_token('noscript') - scripting enabled");
             }
             Token::StartTag(tag)
                 if (tag.name == TagName::Noframes
                     || tag.name == TagName::Style) =>
             {
-                todo!("InHead::on_token('base|basefont|bgsound|link')");
+                todo!("InHead::on_token('noframes|style')");
             }
-            Token::StartTag(tag) if tag.name == TagName::Noscript /* && !scripting_flag */ => {
+            Token::StartTag(tag) if tag.name == TagName::Noscript && parser.scripting == ScriptingFlag::Disabled => {
                 todo!("InHead::on_token('noscript') - scripting disabled");
             }
             Token::StartTag(tag) if tag.name == TagName::Script => {
