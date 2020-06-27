@@ -52,6 +52,10 @@ impl Element {
         Rc::new(RefCell::new(elem))
     }
 
+    pub fn is_html(&self) -> bool {
+        self.namespace == Namespace::HTML
+    }
+
     /// https://html.spec.whatwg.org/multipage/parsing.html#mathml-text-integration-point
     pub fn is_mathml_text_integration_point(&self) -> bool {
         match (self.namespace, self.name()) {
@@ -202,6 +206,7 @@ impl Element {
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, From, PartialEq)]
 pub enum Category {
     Special,
     Formatting,

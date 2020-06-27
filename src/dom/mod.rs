@@ -13,7 +13,7 @@ pub use namespace::Namespace;
 pub use document::Document;
 pub use document_fragment::DocumentFragment;
 pub use document_type::DocumentType;
-pub use element::{Element, ElementChildNode};
+pub use element::{Element, ElementChildNode, Category};
 pub use processing_instruction::ProcessingInstruction;
 pub use text::Text;
 

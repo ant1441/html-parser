@@ -11,6 +11,10 @@ pub(super) struct OpenElementsStack {
 }
 
 impl OpenElementsStack {
+    pub fn new() -> Self {
+        OpenElementsStack { stack: Vec::new() }
+    }
+
     pub fn contains_element(&self, name: &TagName) -> bool {
         self.stack
             .iter()

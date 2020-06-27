@@ -9,7 +9,8 @@ use log::{debug, trace};
 use crate::{
     dom::{self, Document},
     parser::{
-        open_elements_stack::OpenElementsStack, states::States, FramesetOkFlag, ScriptingFlag,
+        states::States, FramesetOkFlag, ListOfActiveFormattingElements, OpenElementsStack,
+        ScriptingFlag,
     },
     tokenizer::{TagName, Token, Tokenizer},
 };
@@ -26,8 +27,8 @@ where
     reprocess: bool,
     last_token: Option<Token>,
 
-    // TODO open_elements
     pub(super) open_elements: OpenElementsStack,
+    pub(super) list_of_active_formatting_elements: ListOfActiveFormattingElements,
 
     // Element pointsers
     head_element_pointer: Option<Rc<RefCell<dom::Element>>>,
@@ -52,7 +53,9 @@ where
             insertion_mode: Some(States::new()),
             reprocess: false,
             last_token: None,
-            open_elements: Default::default(),
+
+            open_elements: OpenElementsStack::new(),
+            list_of_active_formatting_elements: ListOfActiveFormattingElements::new(),
 
             head_element_pointer: None,
 
@@ -66,11 +69,13 @@ where
             let insertion_mode = self.insertion_mode.take().unwrap();
 
             let num_open_elements = self.open_elements.len();
+            let num_active_formatting_elements = self.list_of_active_formatting_elements.len();
             debug!(
                 target: "html_parser::parser",
-                "State ({}) [{:3} elements]: {:?}",
+                "State ({}) [Open Elements: {:3}, Active Formatting Elements: {:3}]: {:?}",
                 if self.reprocess { "R" } else { "-" },
                 num_open_elements,
+                num_active_formatting_elements,
                 insertion_mode
             );
             let res = match insertion_mode {
