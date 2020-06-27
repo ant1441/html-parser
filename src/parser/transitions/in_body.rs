@@ -552,9 +552,9 @@ where
             );
             loop {
                 trace!("InBody::on_token(EndTag(_)) - Node: {:?}", node);
-                if node.borrow().is_html() && node.borrow().name() == &tag.name {
-                    warn!("[TODO] InBody: _  - Generate implied end tags");
-                    // Generate implied end tags, except for HTML elements with the same tag name as the token.
+                let tag_name = &tag.name;
+                if node.borrow().is_html() && node.borrow().name() == tag_name {
+                    parser.generate_implied_end_tags(Some(tag_name));
                     if !node_is_current_node {
                         parse_error("");
                     }
