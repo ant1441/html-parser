@@ -254,7 +254,7 @@ impl States {
             // InHeadNoscript(state) => state.on_token(parser, input),
             AfterHead(state) => state.on_token(parser, input),
             InBody(state) => state.on_token(parser, input),
-            // Text(state) => state.on_token(parser, input),
+            Text(state) => state.on_token(parser, input),
             // InTable(state) => state.on_token(parser, input),
             // InTableText(state) => state.on_token(parser, input),
             // InCaption(state) => state.on_token(parser, input),
