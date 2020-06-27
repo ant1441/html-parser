@@ -65,6 +65,28 @@ where
         }
     }
 
+    pub fn run(&mut self) {
+        // IDEAS:
+        //
+        // TODO:
+        // '<' in Script tag...
+        // StartTag(StartTag { name: "t.length;r++)console.log(\"actionqueue\",c(t[r]))}function&&&&&&&&&&&&&&&",
+
+        for token in self {
+            println!("[EMIT]: {}", token);
+        }
+    }
+
+    pub(crate) fn switch_to_rawtext_state(&mut self) {
+        trace!("External switch to States::RawText");
+        self.state = Some(States::raw_text())
+    }
+
+    pub(crate) fn switch_to_rcdata_state(&mut self) {
+        trace!("External switch to States::RcData");
+        self.state = Some(States::rc_data(String::new()))
+    }
+
     fn peek_next_character(&mut self) -> Result<Character> {
         let pos = self.reader.seek(SeekFrom::Current(0)).unwrap();
         let ret = self.next_character()?;
@@ -203,18 +225,6 @@ where
         }
 
         Ok(found_ident)
-    }
-
-    pub fn run(&mut self) {
-        // IDEAS:
-        //
-        // TODO:
-        // '<' in Script tag...
-        // StartTag(StartTag { name: "t.length;r++)console.log(\"actionqueue\",c(t[r]))}function&&&&&&&&&&&&&&&",
-
-        for token in self {
-            println!("[EMIT]: {}", token);
-        }
     }
 
     fn handle_transition_result(&mut self, mut res: TransitionResult) -> Option<token::Token> {

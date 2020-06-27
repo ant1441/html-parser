@@ -80,7 +80,8 @@ where
                 current_state.into_transition_result()
             }
             Token::StartTag(tag) if tag.name == TagName::Title => {
-                todo!("InHead::on_token('title')");
+                // Follow the generic RCDATA element parsing algorithm.
+                parser.generic_rcdata_element_parse(current_state, t)
             }
             Token::StartTag(tag) if tag.name == TagName::Noscript /* && scripting_flag */ => {
                 todo!("InHead::on_token('noscript') - scripting disabled");

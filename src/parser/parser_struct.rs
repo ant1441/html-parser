@@ -10,7 +10,7 @@ use crate::{
     dom::{self, Document},
     parser::{
         states::States, FramesetOkFlag, ListOfActiveFormattingElements, OpenElementsStack,
-        ScriptingFlag,
+        ScriptingFlag, TransitionResult,
     },
     tokenizer::{TagName, Token, Tokenizer},
 };
@@ -26,6 +26,8 @@ where
     insertion_mode: Option<States>,
     reprocess: bool,
     last_token: Option<Token>,
+
+    original_insertion_mode: Option<States>,
 
     pub(super) open_elements: OpenElementsStack,
     pub(super) list_of_active_formatting_elements: ListOfActiveFormattingElements,
@@ -53,6 +55,8 @@ where
             insertion_mode: Some(States::new()),
             reprocess: false,
             last_token: None,
+
+            original_insertion_mode: None,
 
             open_elements: OpenElementsStack::new(),
             list_of_active_formatting_elements: ListOfActiveFormattingElements::new(),
@@ -137,6 +141,28 @@ where
         let node = dom::Text::new(data.as_ref().to_string());
         trace!(target: "html_parser::parser", "Inserting char {:?} at position {}", node, pos);
         target.insert(pos, node.into());
+    }
+
+    pub(super) fn generic_raw_text_element_parse(&mut self, current_state: States, token: &Token) -> TransitionResult {
+        let node = dom::Element::new_html(token.tag_name().unwrap().clone());
+        self.insert_html_element(node);
+
+        self.tokenizer.switch_to_rawtext_state();
+
+        self.original_insertion_mode = Some(current_state);
+
+        States::text().into_transition_result()
+    }
+
+    pub(super) fn generic_rcdata_element_parse(&mut self, current_state: States, token: &Token) -> TransitionResult {
+        let node = dom::Element::new_html(token.tag_name().unwrap().clone());
+        self.insert_html_element(node);
+
+        self.tokenizer.switch_to_rcdata_state();
+
+        self.original_insertion_mode = Some(current_state);
+
+        States::text().into_transition_result()
     }
 
     pub(super) fn generate_implied_end_tags(&mut self, except: Option<&TagName>) {
