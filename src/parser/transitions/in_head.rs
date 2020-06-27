@@ -1,6 +1,6 @@
 use crate::{
     dom,
-    parser::{states::*, Parser, TransitionResult},
+    parser::{encodings, states::*, Parser, TransitionResult},
     tokenizer::{TagName, Token},
 };
 use std::io;
@@ -54,17 +54,27 @@ where
                 todo!("InHead::on_token('base|basefont|bgsound|link')");
             }
             Token::StartTag(tag) if tag.name == TagName::Meta => {
-                let node = dom::Element::new_html(TagName::Meta);
+                let node = dom::Element::new_html(tag.name.clone());
                 parser.insert_html_element(node);
                 parser.open_elements.pop();
+
                 if tag.is_self_closing() {
                     todo!("InHead:on_token(Self closing 'meta')");
                 }
-                if let Some(_attr) = tag.attributes_iter().find(|a| a.name == "charset") {
-                    todo!("InHead:on_token('charset' meta)");
+
+                if let Some(attr) = tag.attributes_iter().find(|a| a.name == "charset") {
+                    if let Some(encoding) = encodings::get_encoding(&attr.value) {
+                        if encoding.name != "UTF-8" {
+                            panic!("Unsupported encoding - {:?}", encoding);
+                        }
+                    };
                 }
-                if let Some(_attr) = tag.attributes_iter().find(|a| a.name == "http-equiv") {
-                    todo!("InHead:on_token('http-equiv' meta)");
+                if let Some(attr) = tag.attributes_iter().find(|a| a.name == "http-equiv") {
+                    if attr.value.eq_ignore_ascii_case("content-type") {
+                        if let Some(_attr) = tag.attributes_iter().find(|a| a.name == "content") {
+                            todo!("InHead(StartTag('meta')) Unsupported <meta http-equiv='Content-Type' content='...'>")
+                        }
+                    }
                 }
 
                 current_state.into_transition_result()
