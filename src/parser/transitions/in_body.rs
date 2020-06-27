@@ -406,7 +406,9 @@ where
                 || tag.name == TagName::Tt
                 || tag.name == TagName::U) =>
         {
-            todo!("InBody::on_token(EndTag('b|...'))");
+            adoption_agency_algorithm(parser, t);
+
+            current_state.into_transition_result()
         }
         Token::StartTag(tag)
             if (tag.name == TagName::Applet
@@ -518,5 +520,44 @@ where
         Token::EndTag(_tag) => {
             todo!("InBody::on_token(EndTag(_))");
         }
+    }
+}
+
+fn adoption_agency_algorithm<R>(parser: &mut Parser<R>, token: &Token)
+where
+    R: io::Read + io::Seek,
+{
+    let subject = token.tag_name().unwrap();
+    let current_node = parser.current_node().unwrap();
+    if current_node.borrow().is_html()
+        && current_node.borrow().name() == subject
+        && parser
+            .list_of_active_formatting_elements
+            .contains(&current_node.clone().into())
+    {
+        parser.open_elements.pop();
+        return;
+    }
+
+    let mut outer_loop_counter = 0;
+    '_outer: loop {
+        if outer_loop_counter >= 8 {
+            return;
+        }
+        outer_loop_counter += 1;
+        let _formatting_element = match parser
+            .list_of_active_formatting_elements
+            .iter()
+            .rev()
+            .take_while(|e| !e.is_marker())
+            .find(|e| e.is_element(subject))
+        {
+            None => {
+                todo!("adoption_agency_algorithm return and instead act as described in the \"any other end tag\" entry above.");
+            }
+            Some(e) => e,
+        };
+
+        todo!("adoption_agency_algorithm for {:?}", token)
     }
 }
