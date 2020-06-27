@@ -1,6 +1,6 @@
-use derive_more::{AsRef, Deref, DerefMut, Display, From};
+use derive_more::{AsRef, Deref, DerefMut, Display, From, Into};
 
-use super::{errors, token::Token, Codepoint, TransitionResult};
+use super::{errors, token::{self, Token}, Codepoint, TransitionResult};
 
 macro_rules! create_states {
     ($($s:ident,)+) => {
@@ -891,13 +891,13 @@ impl States {
             TagName(state) => state.on_character(input),
             RcDataLessThanSign(state) => state.on_character(input),
             RcDataEndTagOpen(state) => state.on_character(input),
-            RcDataEndTagName(state) => state.on_character(input),
+            // RcDataEndTagName(state) => (see on_character_and_last_start_tag)
             // RawTextLessThanSign(state) => state.on_character(input),
             // RawTextEndTagOpen(state) => state.on_character(input),
-            // RawTextEndTagName(state) => state.on_character(input),
+            // RawTextEndTagName(state) => (see on_character_and_last_start_tag)
             // ScriptDataLessThanSign(state) => state.on_character(input),
             // ScriptDataEndTagOpen(state) => state.on_character(input),
-            // ScriptDataEndTagName(state) => state.on_character(input),
+            // ScriptDataEndTagName(state) => (see on_character_and_last_start_tag)
             // ScriptDataEscapeStart(state) => state.on_character(input),
             // ScriptDataEscapeStartDash(state) => state.on_character(input),
             // ScriptDataEscaped(state) => state.on_character(input),
@@ -905,7 +905,7 @@ impl States {
             // ScriptDataEscapedDashDash(state) => state.on_character(input),
             // ScriptDataEscapedLessThanSign(state) => state.on_character(input),
             // ScriptDataEscapedEndTagOpen(state) => state.on_character(input),
-            // ScriptDataEscapedEndTagName(state) => state.on_character(input),
+            // ScriptDataEscapedEndTagName(state) => (see on_character_and_last_start_tag)
             // ScriptDataDoubleEscapeStart(state) => state.on_character(input),
             // ScriptDataDoubleEscaped(state) => state.on_character(input),
             // ScriptDataDoubleEscapedDash(state) => state.on_character(input),
@@ -965,6 +965,18 @@ impl States {
         }
     }
 
+    pub(super) fn on_character_and_last_start_tag(self, input: CharacterAndLastStartTag) -> TransitionResult {
+        use States::*;
+
+        match self {
+            RcDataEndTagName(state) => state.on_character_and_last_start_tag(input),
+            // RawTextEndTagName(state) => state.on_character(input),
+            // ScriptDataEndTagName(state) => state.on_character(input),
+            // ScriptDataEscapedEndTagName(state) => state.on_character(input),
+            _ => Err(errors::StateTransitionError::new(self, "CharacterAndLastStartTag")).into(),
+        }
+    }
+
     pub(super) fn on_advance(self) -> TransitionResult {
         match self {
             States::NumericCharacterReferenceEnd(state) => state.on_advance(),
@@ -1005,6 +1017,7 @@ impl States {
                 self.on_possible_character_reference_with_next_char(message)
             }
             Character(message) => self.on_character(message),
+            CharacterAndLastStartTag(message) => self.on_character_and_last_start_tag(message),
         }
     }
 
@@ -1025,6 +1038,7 @@ pub(super) enum StateMachineMessages {
     NextFewCharacters(NextFewCharacters),
     PossibleCharacterReferenceWithNextChar(PossibleCharacterReferenceWithNextChar),
     Character(Character),
+    CharacterAndLastStartTag(CharacterAndLastStartTag),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, From)]
@@ -1033,13 +1047,16 @@ pub(super) enum Character {
     Eof,
 }
 
+#[derive(Clone, Debug, PartialEq, From, Into)]
+pub(super) struct CharacterAndLastStartTag(Character, Option<token::StartTag>);
+
 // Is this just needed for MarkupDeclarationOpen?
-#[derive(Clone, Debug, PartialEq, From, AsRef, Deref, DerefMut)]
+#[derive(Clone, Debug, PartialEq, From, Into, AsRef, Deref, DerefMut)]
 pub(super) struct NextFewCharacters(Option<String>);
 
 // Is this just needed for NamedCharacterReference?
-#[derive(Clone, Debug, PartialEq, From, AsRef)]
+#[derive(Clone, Debug, PartialEq, From, Into, AsRef)]
 pub(super) struct PossibleCharacterReferenceWithNextChar(
-    pub(super) Option<String>,
-    pub(super) Character,
+    Option<String>,
+    Character,
 );

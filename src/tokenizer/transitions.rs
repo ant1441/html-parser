@@ -322,20 +322,21 @@ impl RcDataEndTagOpen {
 }
 
 impl RcDataEndTagName {
-    pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
+    pub(super) fn on_character_and_last_start_tag(mut self, c: CharacterAndLastStartTag) -> TransitionResult {
+        let (c, last_start_tag_emitted) = c.into();
         match c {
             Character::Char(U_CHARACTER_TABULATION)
             | Character::Char(U_LINE_FEED)
             | Character::Char(U_FORM_FEED)
             | Character::Char(U_SPACE)
-                if self.is_appropriate_end_tag_token() =>
+                if self.is_appropriate_end_tag_token(&last_start_tag_emitted) =>
             {
                 States::before_attribute_name(self.token).into_transition_result()
             }
-            Character::Char(U_SOLIDUS) if self.is_appropriate_end_tag_token() => {
+            Character::Char(U_SOLIDUS) if self.is_appropriate_end_tag_token(&last_start_tag_emitted) => {
                 States::self_closing_start_tag(self.token).into_transition_result()
             }
-            Character::Char(U_GREATER_THAN_SIGN) if self.is_appropriate_end_tag_token() => {
+            Character::Char(U_GREATER_THAN_SIGN) if self.is_appropriate_end_tag_token(&last_start_tag_emitted) => {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -374,9 +375,14 @@ impl RcDataEndTagName {
     // tokenizer, if any.
     // If no start tag has been emitted from this tokenizer, then no end tag
     // token is appropriate.
-    fn is_appropriate_end_tag_token(&self) -> bool {
-        if let Token::EndTag(ref _token) = self.token {
-            todo!("RcDataEndTagName::is_appropriate_end_tag");
+    fn is_appropriate_end_tag_token(&self, last_start_tag_emitted: &Option<token::StartTag>) -> bool {
+        if let Token::EndTag(ref token) = self.token {
+            if let Some(tag) = last_start_tag_emitted {
+                if tag.name == token.name {
+                    return true;
+                }
+            }
+            false
         } else {
             panic!(
                 "Unexpected token in RcDataEndTagName::is_appropriate_end_tag_token: {:?}",
@@ -1192,7 +1198,7 @@ impl NamedCharacterReference {
         mut self,
         input: PossibleCharacterReferenceWithNextChar,
     ) -> TransitionResult {
-        let PossibleCharacterReferenceWithNextChar(possible_char_ref, next_c) = input;
+        let (possible_char_ref, next_c) = input.into();
 
         let next_char_equals_or_alpha = match next_c {
             Character::Char(U_EQUALS_SIGN) => true,

@@ -16,9 +16,7 @@ mod token;
 mod transition_result;
 mod transitions;
 
-use self::states::{
-    Character, NamedCharacterReference, PossibleCharacterReferenceWithNextChar, States,
-};
+use self::states::{Character, NamedCharacterReference, States};
 pub(crate) use tagname::TagName;
 pub(crate) use token::Token;
 pub(self) use transition_result::TransitionResult;
@@ -39,6 +37,7 @@ where
     state: Option<States>,
     reconsume: bool,
     last_char: Option<Character>,
+    last_start_tag_emitted: Option<token::StartTag>,
 
     // We collapse multiple Token::Character into Token::Characters
     characters_emit_cache: Cell<Option<Token>>,
@@ -56,9 +55,11 @@ where
             // [encoding sniffing algorithm](https://html.spec.whatwg.org/multipage/parsing.html#encoding-sniffing-algorithm)
             reader: BufReader::new(reader),
             collapse_chars,
+
             state: Some(States::new()),
             reconsume: false,
             last_char: None,
+            last_start_tag_emitted: None,
 
             characters_emit_cache: Cell::new(None),
             token_emit_cache: RefCell::new(Vec::new()),
@@ -263,7 +264,13 @@ where
             None
         } else {
             let mut token_emit_cache = self.token_emit_cache.borrow_mut();
-            Some(token_emit_cache.remove(0))
+            let to_emit = Some(token_emit_cache.remove(0));
+
+            if let Some(Token::StartTag(ref tag)) = to_emit {
+                self.last_start_tag_emitted = Some(tag.clone());
+            }
+
+            to_emit
         }
     }
 }
@@ -314,11 +321,25 @@ where
                         });
                     let next_char = self.peek_next_character().unwrap();
                     reconstructed_state.on_possible_character_reference_with_next_char(
-                        PossibleCharacterReferenceWithNextChar(possible_char_ref, next_char),
+                        (possible_char_ref, next_char).into(),
                     )
                 }
 
                 States::NumericCharacterReferenceEnd(_) => state.on_advance(),
+
+                States::RcDataEndTagName(_)
+                | States::RawTextEndTagName(_)
+                | States::ScriptDataEndTagName(_)
+                | States::ScriptDataEscapedEndTagName(_) => {
+                    let c = if !self.reconsume {
+                        self.next_character().unwrap()
+                    } else {
+                        self.last_char.unwrap()
+                    };
+                    self.last_char = Some(c);
+                    state.on_character_and_last_start_tag((c, self.last_start_tag_emitted.clone()).into())
+                }
+
                 _ => {
                     let c = if !self.reconsume {
                         self.next_character().unwrap()
