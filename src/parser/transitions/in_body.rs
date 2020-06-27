@@ -2,7 +2,7 @@ use log::{trace, warn};
 
 use crate::{
     dom::{self, Namespace},
-    parser::{self, states::*, Parser, TransitionResult},
+    parser::{self, states::*, FramesetOkFlag, Parser, TransitionResult},
     tokenizer::{TagName, Token},
 };
 use std::io;
@@ -441,7 +441,25 @@ where
             todo!("InBody::on_token('area|...')");
         }
         Token::StartTag(tag) if tag.name == TagName::Input => {
-            todo!("InBody::on_token('input')");
+            warn!("[TODO] InBody: 'input' - Reconstruct the active formatting elements, if any.");
+
+            let node = dom::Element::new_html(tag.name.clone());
+            parser.insert_html_element(node);
+
+            if tag.is_self_closing() {
+                warn!(
+                    "[TODO] InBody: 'input' - Acknowledge the token's self-closing flag, if it is set."
+                );
+            }
+
+            if tag
+                .attributes_iter()
+                .any(|a| a.name == "type" && a.value.to_lowercase() == "hidden")
+            {
+                parser.frameset_ok = FramesetOkFlag::NotOk;
+            }
+
+            current_state.into_transition_result()
         }
         Token::StartTag(tag)
             if (tag.name == TagName::Param
