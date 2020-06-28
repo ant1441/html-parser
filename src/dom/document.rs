@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{fmt, cell::RefCell, rc::Rc};
 
 use derive_more::From;
 use log::warn;
@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::dom::{Comment, DocumentType, Element, ProcessingInstruction};
 
-#[derive(Clone, Debug, Default, Eq, From, PartialEq)]
+#[derive(Clone, Default, Eq, From, PartialEq)]
 pub struct Document {
     first_children: Vec<ChildNode>,
     document_type: Option<DocumentType>,
@@ -22,6 +22,11 @@ enum ChildNode {
 }
 
 impl Document {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     #[must_use]
     pub fn len(&self) -> usize {
         self.first_children.len()
@@ -49,7 +54,7 @@ impl Document {
         self.element.clone()
     }
 
-    pub(crate) fn add_document_type(&mut self, document_type: DocumentType) {
+    pub fn add_document_type(&mut self, document_type: DocumentType) {
         assert!(
             self.document_type.is_none(),
             "[{}::Document] Cannot add second document type",
@@ -62,7 +67,7 @@ impl Document {
         let _ = self;
         warn!("[TODO] Document::set_mode({:?})", mode)
     }
-    pub(crate) fn push_element(&mut self, elem: Rc<RefCell<Element>>) {
+    pub fn push_element(&mut self, elem: Rc<RefCell<Element>>) {
         if let Some(ref element) = self.element {
             let mut element = element.borrow_mut();
             element.push(elem.into())
@@ -70,7 +75,7 @@ impl Document {
             self.element = Some(elem)
         }
     }
-    pub(crate) fn push_comment(&mut self, elem: Comment) {
+    pub fn push_comment(&mut self, elem: Comment) {
         let _ = self;
         warn!("[TODO] Document::push_comment({:?})", elem);
         drop(elem);
@@ -85,5 +90,27 @@ trait DocumentInterface {
 impl DocumentInterface for Document {
     fn doctype(&self) -> Option<&DocumentType> {
         self.document_type.as_ref()
+    }
+}
+
+impl fmt::Debug for Document {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut f = f.debug_struct("Document");
+        if !self.first_children.is_empty() {
+            f.field("first_children", &self.first_children);
+        }
+        if let Some(ref document_type) = self.document_type {
+            f.field("document_type", &document_type);
+        }
+        if !self.second_children.is_empty() {
+            f.field("second_children", &self.second_children);
+        }
+        if let Some(ref element) = self.element {
+            f.field("element", &element.borrow());
+        }
+        if !self.third_children.is_empty() {
+            f.field("third_children", &self.third_children);
+        }
+        f.finish()
     }
 }
