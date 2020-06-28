@@ -143,11 +143,11 @@ where
         }
     }
 
-    fn next_few_characters_are(&mut self, other: &str, case_insesitive: bool) -> bool {
-        let pos = self.reader.seek(SeekFrom::Current(0)).unwrap();
+    fn next_few_characters_are(&mut self, other: &str, case_insesitive: bool) -> Result<bool> {
+        let pos = self.reader.seek(SeekFrom::Current(0))?;
         let mut buffer = vec![0u8; other.len()];
         if self.reader.read_exact(&mut buffer).is_err() {
-            return false;
+            return Ok(false);
         }
         let read = str::from_utf8(&buffer);
         trace!("next_few_characters_are:: Read {:?}", read);
@@ -156,11 +156,11 @@ where
                 if (!case_insesitive && (s == other))
                     || (case_insesitive && (s.eq_ignore_ascii_case(other))) =>
             {
-                true
+                Ok(true)
             }
             _ => {
-                self.reader.seek(SeekFrom::Start(pos)).unwrap();
-                false
+                let _ = self.reader.seek(SeekFrom::Start(pos))?;
+                Ok(false)
             }
         }
     }
@@ -296,11 +296,11 @@ where
             let res = match state {
                 States::Term(_) => return None,
                 States::MarkupDeclarationOpen(ref m) => {
-                    if self.next_few_characters_are("--", false) {
+                    if self.next_few_characters_are("--", false).unwrap() {
                         state.on_next_few_characters(Some("--".to_string()).into())
-                    } else if self.next_few_characters_are("DOCTYPE", true) {
+                    } else if self.next_few_characters_are("DOCTYPE", true).unwrap() {
                         state.on_next_few_characters(Some("DOCTYPE".to_string()).into())
-                    } else if self.next_few_characters_are("[CDATA[", false) {
+                    } else if self.next_few_characters_are("[CDATA[", false).unwrap() {
                         state.on_next_few_characters(Some("[CDATA[".to_string()).into())
                     } else {
                         todo!("MarkupDeclarationOpen::{:?}", m);
