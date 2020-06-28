@@ -3,11 +3,14 @@ use std::io;
 use log::{trace, warn};
 
 use crate::{
-    dom::{Namespace, Comment, Element, Category},
-    parser::{parse_error, states::{self, States}, FramesetOkFlag, Parser, TransitionResult, ScriptingFlag},
+    dom::{Category, Comment, Element, Namespace},
+    parser::{
+        parse_error,
+        states::{self, States},
+        FramesetOkFlag, Parser, ScriptingFlag, TransitionResult,
+    },
     tokenizer::{TagName, Token},
 };
-
 
 impl states::InBody {
     pub(in crate::parser) fn on_token<R>(
@@ -71,16 +74,19 @@ where
             todo!("InBody::on_token('html')");
         }
         Token::StartTag(tag)
-            if (tag.name == TagName::Base
-                || tag.name == TagName::Basefont
-                || tag.name == TagName::Bgsound
-                || tag.name == TagName::Link
-                || tag.name == TagName::Meta
-                || tag.name == TagName::Noframes
-                || tag.name == TagName::Script
-                || tag.name == TagName::Style
-                || tag.name == TagName::Template
-                || tag.name == TagName::Title) =>
+            if matches!(
+                tag.name,
+                TagName::Base
+                    | TagName::Basefont
+                    | TagName::Bgsound
+                    | TagName::Link
+                    | TagName::Meta
+                    | TagName::Noframes
+                    | TagName::Script
+                    | TagName::Style
+                    | TagName::Template
+                    | TagName::Title
+            ) =>
         {
             todo!("InBody::on_token('base|basefont|bgsound|link|meta|noframes|script|style|template|title')");
         }
@@ -213,30 +219,33 @@ where
             ret
         }
         Token::StartTag(tag)
-            if (tag.name == TagName::Address
-                || tag.name == TagName::Article
-                || tag.name == TagName::Aside
-                || tag.name == TagName::Blockquote
-                || tag.name == TagName::Center
-                || tag.name == TagName::Details
-                || tag.name == TagName::Dialog
-                || tag.name == TagName::Dir
-                || tag.name == TagName::Div
-                || tag.name == TagName::Dl
-                || tag.name == TagName::Fieldset
-                || tag.name == TagName::Figcaption
-                || tag.name == TagName::Figure
-                || tag.name == TagName::Footer
-                || tag.name == TagName::Header
-                || tag.name == TagName::Hgroup
-                || tag.name == TagName::Main
-                || tag.name == TagName::Menu
-                || tag.name == TagName::Nav
-                || tag.name == TagName::Ol
-                || tag.name == TagName::P
-                || tag.name == TagName::Section
-                || tag.name == TagName::Summary
-                || tag.name == TagName::Ul) =>
+            if matches!(
+                tag.name,
+                TagName::Address
+                    | TagName::Article
+                    | TagName::Aside
+                    | TagName::Blockquote
+                    | TagName::Center
+                    | TagName::Details
+                    | TagName::Dialog
+                    | TagName::Dir
+                    | TagName::Div
+                    | TagName::Dl
+                    | TagName::Fieldset
+                    | TagName::Figcaption
+                    | TagName::Figure
+                    | TagName::Footer
+                    | TagName::Header
+                    | TagName::Hgroup
+                    | TagName::Main
+                    | TagName::Menu
+                    | TagName::Nav
+                    | TagName::Ol
+                    | TagName::P
+                    | TagName::Section
+                    | TagName::Summary
+                    | TagName::Ul
+            ) =>
         {
             if parser.open_elements.contains_element(&TagName::P) {
                 todo!("InBody::on_token('address|...') - close a p element");
@@ -248,13 +257,13 @@ where
             current_state.into_transition_result()
         }
         Token::StartTag(tag)
-            if (tag.name == TagName::H1
-                || tag.name == TagName::H2
-                || tag.name == TagName::H3
-                || tag.name == TagName::H4
-                || tag.name == TagName::H5
-                || tag.name == TagName::H6) =>
+            if matches!(
+                tag.name,
+                TagName::H1 | TagName::H2 | TagName::H3 | TagName::H4 | TagName::H5 | TagName::H6
+            ) =>
         {
+            // If the stack of open elements has a p element in button scope, then close a p element.
+            let current_node = parser.current_node().unwrap();
             todo!("InBody::on_token('hN|...')");
         }
         Token::StartTag(tag) if (tag.name == TagName::Pre || tag.name == TagName::Listing) => {
@@ -276,32 +285,35 @@ where
             todo!("InBody::on_token('button')");
         }
         Token::EndTag(tag)
-            if (tag.name == TagName::Address
-                || tag.name == TagName::Article
-                || tag.name == TagName::Aside
-                || tag.name == TagName::Blockquote
-                || tag.name == TagName::Button
-                || tag.name == TagName::Center
-                || tag.name == TagName::Details
-                || tag.name == TagName::Dialog
-                || tag.name == TagName::Dir
-                || tag.name == TagName::Div
-                || tag.name == TagName::Dl
-                || tag.name == TagName::Fieldset
-                || tag.name == TagName::Figcaption
-                || tag.name == TagName::Figure
-                || tag.name == TagName::Footer
-                || tag.name == TagName::Header
-                || tag.name == TagName::Hgroup
-                || tag.name == TagName::Listing
-                || tag.name == TagName::Main
-                || tag.name == TagName::Menu
-                || tag.name == TagName::Nav
-                || tag.name == TagName::Ol
-                || tag.name == TagName::Pre
-                || tag.name == TagName::Section
-                || tag.name == TagName::Summary
-                || tag.name == TagName::Ul) =>
+            if matches!(
+                tag.name,
+                TagName::Address
+                    | TagName::Article
+                    | TagName::Aside
+                    | TagName::Blockquote
+                    | TagName::Button
+                    | TagName::Center
+                    | TagName::Details
+                    | TagName::Dialog
+                    | TagName::Dir
+                    | TagName::Div
+                    | TagName::Dl
+                    | TagName::Fieldset
+                    | TagName::Figcaption
+                    | TagName::Figure
+                    | TagName::Footer
+                    | TagName::Header
+                    | TagName::Hgroup
+                    | TagName::Listing
+                    | TagName::Main
+                    | TagName::Menu
+                    | TagName::Nav
+                    | TagName::Ol
+                    | TagName::Pre
+                    | TagName::Section
+                    | TagName::Summary
+                    | TagName::Ul
+            ) =>
         {
             if !parser.open_elements.contains_element(&tag.name) {
                 parse_error(&format!("No {} in stack of open elements", &tag.name));
@@ -337,12 +349,10 @@ where
             todo!("InBody::on_token(EndTag('dd|dt'))");
         }
         Token::EndTag(tag)
-            if (tag.name == TagName::H1
-                || tag.name == TagName::H2
-                || tag.name == TagName::H3
-                || tag.name == TagName::H4
-                || tag.name == TagName::H5
-                || tag.name == TagName::H6) =>
+            if matches!(
+                tag.name,
+                TagName::H1 | TagName::H2 | TagName::H3 | TagName::H4 | TagName::H5 | TagName::H6
+            ) =>
         {
             todo!("InBody::on_token(EndTag('hN|...'))");
         }
@@ -373,18 +383,21 @@ where
             current_state.into_transition_result()
         }
         Token::StartTag(tag)
-            if (tag.name == TagName::B
-                || tag.name == TagName::Big
-                || tag.name == TagName::Code
-                || tag.name == TagName::Em
-                || tag.name == TagName::Font
-                || tag.name == TagName::I
-                || tag.name == TagName::S
-                || tag.name == TagName::Small
-                || tag.name == TagName::Strike
-                || tag.name == TagName::Strong
-                || tag.name == TagName::Tt
-                || tag.name == TagName::U) =>
+            if matches!(
+                tag.name,
+                TagName::B
+                    | TagName::Big
+                    | TagName::Code
+                    | TagName::Em
+                    | TagName::Font
+                    | TagName::I
+                    | TagName::S
+                    | TagName::Small
+                    | TagName::Strike
+                    | TagName::Strong
+                    | TagName::Tt
+                    | TagName::U
+            ) =>
         {
             todo!("InBody::on_token('b|...')");
         }
@@ -392,36 +405,41 @@ where
             todo!("InBody::on_token('nobr')");
         }
         Token::EndTag(tag)
-            if (tag.name == TagName::A
-                || tag.name == TagName::B
-                || tag.name == TagName::Big
-                || tag.name == TagName::Code
-                || tag.name == TagName::Em
-                || tag.name == TagName::Font
-                || tag.name == TagName::I
-                || tag.name == TagName::Nobr
-                || tag.name == TagName::S
-                || tag.name == TagName::Small
-                || tag.name == TagName::Strike
-                || tag.name == TagName::Strong
-                || tag.name == TagName::Tt
-                || tag.name == TagName::U) =>
+            if matches!(
+                tag.name,
+                TagName::A
+                    | TagName::B
+                    | TagName::Big
+                    | TagName::Code
+                    | TagName::Em
+                    | TagName::Font
+                    | TagName::I
+                    | TagName::Nobr
+                    | TagName::S
+                    | TagName::Small
+                    | TagName::Strike
+                    | TagName::Strong
+                    | TagName::Tt
+                    | TagName::U
+            ) =>
         {
             adoption_agency_algorithm(parser, t);
 
             current_state.into_transition_result()
         }
         Token::StartTag(tag)
-            if (tag.name == TagName::Applet
-                || tag.name == TagName::Marquee
-                || tag.name == TagName::Object) =>
+            if matches!(
+                tag.name,
+                TagName::Applet | TagName::Marquee | TagName::Object
+            ) =>
         {
             todo!("InBody::on_token('applet|...')");
         }
         Token::EndTag(tag)
-            if (tag.name == TagName::Applet
-                || tag.name == TagName::Marquee
-                || tag.name == TagName::Object) =>
+            if matches!(
+                tag.name,
+                TagName::Applet | TagName::Marquee | TagName::Object
+            ) =>
         {
             todo!("InBody::on_token(endTag('applet|...'))");
         }
@@ -432,12 +450,15 @@ where
             todo!("InBody::on_token('br')");
         }
         Token::StartTag(tag)
-            if (tag.name == TagName::Area
-                || tag.name == TagName::Br
-                || tag.name == TagName::Embed
-                || tag.name == TagName::Img
-                || tag.name == TagName::Keygen
-                || tag.name == TagName::Wbr) =>
+            if matches!(
+                tag.name,
+                TagName::Area
+                    | TagName::Br
+                    | TagName::Embed
+                    | TagName::Img
+                    | TagName::Keygen
+                    | TagName::Wbr
+            ) =>
         {
             todo!("InBody::on_token('area|...')");
         }
@@ -463,9 +484,7 @@ where
             current_state.into_transition_result()
         }
         Token::StartTag(tag)
-            if (tag.name == TagName::Param
-                || tag.name == TagName::Source
-                || tag.name == TagName::Track) =>
+            if matches!(tag.name, TagName::Param | TagName::Source | TagName::Track) =>
         {
             todo!("InBody::on_token('param|...')");
         }
@@ -497,21 +516,20 @@ where
             todo!("InBody::on_token('noembed')");
         }
         Token::StartTag(tag)
-            if tag.name == TagName::Noscript
-                && parser.scripting == ScriptingFlag::Enabled =>
+            if tag.name == TagName::Noscript && parser.scripting == ScriptingFlag::Enabled =>
         {
             todo!("InBody::on_token('noscript')");
         }
         Token::StartTag(tag) if tag.name == TagName::Select => {
             todo!("InBody::on_token('select')");
         }
-        Token::StartTag(tag) if (tag.name == TagName::Optgroup || tag.name == TagName::Option) => {
+        Token::StartTag(tag) if matches!(tag.name, TagName::Optgroup | TagName::Option) => {
             todo!("InBody::on_token('Optgroup|option')");
         }
-        Token::StartTag(tag) if (tag.name == TagName::Rb || tag.name == TagName::Rtc) => {
+        Token::StartTag(tag) if matches!(tag.name, TagName::Rb | TagName::Rtc) => {
             todo!("InBody::on_token('rb|rtc')");
         }
-        Token::StartTag(tag) if (tag.name == TagName::Rp || tag.name == TagName::Rt) => {
+        Token::StartTag(tag) if matches!(tag.name, TagName::Rp | TagName::Rt) => {
             todo!("InBody::on_token('rp|rt')");
         }
         Token::StartTag(tag) if tag.name == TagName::Math => {
@@ -521,17 +539,20 @@ where
             todo!("InBody::on_token('svg')");
         }
         Token::StartTag(tag)
-            if (tag.name == TagName::Caption
-                || tag.name == TagName::Col
-                || tag.name == TagName::Colgroup
-                || tag.name == TagName::Frame
-                || tag.name == TagName::Head
-                || tag.name == TagName::Tbody
-                || tag.name == TagName::Td
-                || tag.name == TagName::Tfoot
-                || tag.name == TagName::Th
-                || tag.name == TagName::Thead
-                || tag.name == TagName::Tr) =>
+            if matches!(
+                tag.name,
+                TagName::Caption
+                    | TagName::Col
+                    | TagName::Colgroup
+                    | TagName::Frame
+                    | TagName::Head
+                    | TagName::Tbody
+                    | TagName::Td
+                    | TagName::Tfoot
+                    | TagName::Th
+                    | TagName::Thead
+                    | TagName::Tr
+            ) =>
         {
             todo!("InBody::on_token('caption|...')");
         }
@@ -624,6 +645,10 @@ where
             Some(e) => e,
         };
 
-        todo!("adoption_agency_algorithm for {:?} {}", token, outer_loop_counter)
+        todo!(
+            "adoption_agency_algorithm for {:?} {}",
+            token,
+            outer_loop_counter
+        )
     }
 }
