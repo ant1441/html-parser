@@ -22,6 +22,7 @@ pub enum DocumentChildNode {
 }
 
 impl Document {
+    #[must_use]
     pub fn len(&self) -> usize {
         self.first_children.len()
             + if self.document_type.is_some() { 1 } else { 0 }
@@ -30,6 +31,7 @@ impl Document {
             + self.third_children.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.first_children.is_empty()
             && self.document_type.is_none()
@@ -42,6 +44,7 @@ impl Document {
     ///
     /// ## Note
     /// Per the node tree constraints, there can be only one such element.
+    #[must_use]
     pub fn document_element(&self) -> Option<Rc<RefCell<Element>>> {
         self.element.clone()
     }

@@ -12,6 +12,7 @@ pub struct Text {
 }
 
 impl Text {
+    #[must_use]
     pub fn new(data: String) -> Rc<RefCell<Self>> {
         Rc::new(RefCell::new(Text { data }))
     }

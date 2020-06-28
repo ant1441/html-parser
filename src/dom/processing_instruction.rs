@@ -7,10 +7,12 @@ pub struct ProcessingInstruction {
 }
 
 impl ProcessingInstruction {
+    #[must_use]
     pub fn len(&self) -> usize {
         self.data.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
     }

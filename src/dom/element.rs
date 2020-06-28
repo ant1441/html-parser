@@ -16,6 +16,7 @@ pub enum ElementChildNode {
 }
 
 impl ElementChildNode {
+    #[must_use]
     pub fn len(&self) -> usize {
         match self {
             ElementChildNode::Element(e) => e.borrow().len(),
@@ -25,6 +26,7 @@ impl ElementChildNode {
         }
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         match self {
             ElementChildNode::Element(e) => e.borrow().is_empty(),
@@ -45,14 +47,17 @@ pub struct Element {
 }
 
 impl Element {
+    #[must_use]
     pub fn name(&self) -> &TagName {
         &self.name
     }
 
+    #[must_use]
     pub fn namespace(&self) -> Namespace {
         self.namespace
     }
 
+    #[must_use]
     pub fn new_html(name: TagName) -> Rc<RefCell<Self>> {
         let elem = Element {
             name,
@@ -62,11 +67,13 @@ impl Element {
         Rc::new(RefCell::new(elem))
     }
 
+    #[must_use]
     pub fn is_html(&self) -> bool {
         self.namespace == Namespace::HTML
     }
 
     /// https://html.spec.whatwg.org/multipage/parsing.html#mathml-text-integration-point
+    #[must_use]
     pub fn is_mathml_text_integration_point(&self) -> bool {
         match (self.namespace, self.name()) {
             (Namespace::MathML, TagName::Mi) => true,
@@ -79,6 +86,7 @@ impl Element {
     }
 
     /// https://html.spec.whatwg.org/multipage/parsing.html#html-integration-point
+    #[must_use]
     pub fn is_html_integration_point(&self) -> bool {
         match (self.namespace, self.name()) {
             (Namespace::MathML, TagName::AnnotationXml) => todo!(),
@@ -89,6 +97,7 @@ impl Element {
         }
     }
 
+    #[must_use]
     pub fn category(&self) -> Category {
         if self.namespace == Namespace::HTML {
             match self.name {
