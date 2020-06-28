@@ -4,12 +4,12 @@ use log::{trace, warn};
 
 use crate::{
     dom::{Namespace, Comment, Element, Category},
-    parser::{parse_error, states::*, FramesetOkFlag, Parser, TransitionResult, ScriptingFlag},
+    parser::{parse_error, states::{self, States}, FramesetOkFlag, Parser, TransitionResult, ScriptingFlag},
     tokenizer::{TagName, Token},
 };
 
 
-impl InBody {
+impl states::InBody {
     pub(in crate::parser) fn on_token<R>(
         self,
         parser: &mut Parser<R>,
@@ -22,7 +22,7 @@ impl InBody {
     }
 }
 
-#[allow(clippy::cognitive_complexity)]
+#[allow(clippy::cognitive_complexity, clippy::too_many_lines)]
 pub(super) fn transition<R>(
     current_state: States,
     parser: &mut Parser<R>,

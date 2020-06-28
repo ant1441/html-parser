@@ -74,24 +74,23 @@ where
                 num_active_formatting_elements,
                 insertion_mode
             );
-            let res = match insertion_mode {
-                States::Term(_) => return,
-                _ => {
-                    let token = if self.reprocess {
-                        self.last_token.take().unwrap()
-                    } else {
-                        self.tokenizer.next().unwrap()
-                    };
+            let res = if let States::Term(_) = insertion_mode {
+                return;
+            } else {
+                let token = if self.reprocess {
+                    self.last_token.take().unwrap()
+                } else {
+                    self.tokenizer.next().unwrap()
+                };
 
-                    // tree construction dispatcher
-                    if self.is_tree_construction_first_case(&token) {
-                        trace!(target: "html_parser::parser", "Received token {:?}", token);
-                        let ret = insertion_mode.on_token(self, &token);
-                        self.last_token = Some(token);
-                        ret
-                    } else {
-                        todo!("Parser: Process the token according to the rules given in the section for parsing tokens in foreign content.");
-                    }
+                // tree construction dispatcher
+                if self.is_tree_construction_first_case(&token) {
+                    trace!(target: "html_parser::parser", "Received token {:?}", token);
+                    let ret = insertion_mode.on_token(self, &token);
+                    self.last_token = Some(token);
+                    ret
+                } else {
+                    todo!("Parser: Process the token according to the rules given in the section for parsing tokens in foreign content.");
                 }
             };
 

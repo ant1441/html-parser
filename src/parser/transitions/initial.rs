@@ -2,11 +2,11 @@ use std::io;
 
 use crate::{
     dom,
-    parser::{parse_error, states::*, Parser, TransitionResult, transitions::force_quirks_check},
+    parser::{parse_error, states::{self, States}, Parser, TransitionResult, transitions::force_quirks_check},
     tokenizer::Token,
 };
 
-impl Initial {
+impl states::Initial {
     pub(in crate::parser) fn on_token<R>(
         self,
         parser: &mut Parser<R>,

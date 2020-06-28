@@ -72,7 +72,8 @@ impl Document {
     }
     pub(crate) fn push_comment(&mut self, elem: Comment) {
         let _ = self;
-        warn!("[TODO] Document::push_comment({:?})", elem)
+        warn!("[TODO] Document::push_comment({:?})", elem);
+        drop(elem);
     }
 }
 

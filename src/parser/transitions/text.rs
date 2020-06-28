@@ -1,11 +1,11 @@
 use std::io;
 
 use crate::{
-    parser::{states::*, Parser, TransitionResult},
+    parser::{states::{self, States}, Parser, TransitionResult},
     tokenizer::{TagName, Token},
 };
 
-impl Text {
+impl states::Text {
     pub(in crate::parser) fn on_token<R>(
         self,
         parser: &mut Parser<R>,

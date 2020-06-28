@@ -2,11 +2,11 @@ use std::io;
 
 use crate::{
     dom,
-    parser::{encodings, parse_error, states::*, Parser, ScriptingFlag, TransitionResult},
+    parser::{encodings, parse_error, states::{self, States}, Parser, ScriptingFlag, TransitionResult},
     tokenizer::{TagName, Token},
 };
 
-impl InHead {
+impl states::InHead {
     pub(in crate::parser) fn on_token<R>(
         self,
         parser: &mut Parser<R>,
@@ -19,6 +19,7 @@ impl InHead {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn transition<R>(
     current_state: States,
     parser: &mut Parser<R>,

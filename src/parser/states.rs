@@ -244,32 +244,30 @@ impl States {
     where
         R: io::Read + io::Seek,
     {
-        use States::*;
-
         match self {
-            Initial(state) => state.on_token(parser, input),
-            BeforeHtml(state) => state.on_token(parser, input),
-            BeforeHead(state) => state.on_token(parser, input),
-            InHead(state) => state.on_token(parser, input),
-            // InHeadNoscript(state) => state.on_token(parser, input),
-            AfterHead(state) => state.on_token(parser, input),
-            InBody(state) => state.on_token(parser, input),
-            Text(state) => state.on_token(parser, input),
-            // InTable(state) => state.on_token(parser, input),
-            // InTableText(state) => state.on_token(parser, input),
-            // InCaption(state) => state.on_token(parser, input),
-            // InColumnGroup(state) => state.on_token(parser, input),
-            // InTableBody(state) => state.on_token(parser, input),
-            // InRow(state) => state.on_token(parser, input),
-            // InCell(state) => state.on_token(parser, input),
-            // InSelect(state) => state.on_token(parser, input),
-            // InSelectInTable(state) => state.on_token(parser, input),
-            // InTemplate(state) => state.on_token(parser, input),
-            AfterBody(state) => state.on_token(parser, input),
-            // InFrameset(state) => state.on_token(parser, input),
-            // AfterFrameset(state) => state.on_token(parser, input),
-            AfterAfterBody(state) => state.on_token(parser, input),
-            // AfterAfterFrameset(state) => state.on_token(parser, input),
+            States::Initial(state) => state.on_token(parser, input),
+            States::BeforeHtml(state) => state.on_token(parser, input),
+            States::BeforeHead(state) => state.on_token(parser, input),
+            States::InHead(state) => state.on_token(parser, input),
+            // States::InHeadNoscript(state) => state.on_token(parser, input),
+            States::AfterHead(state) => state.on_token(parser, input),
+            States::InBody(state) => state.on_token(parser, input),
+            States::Text(state) => state.on_token(parser, input),
+            // States::InTable(state) => state.on_token(parser, input),
+            // States::InTableText(state) => state.on_token(parser, input),
+            // States::InCaption(state) => state.on_token(parser, input),
+            // States::InColumnGroup(state) => state.on_token(parser, input),
+            // States::InTableBody(state) => state.on_token(parser, input),
+            // States::InRow(state) => state.on_token(parser, input),
+            // States::InCell(state) => state.on_token(parser, input),
+            // States::InSelect(state) => state.on_token(parser, input),
+            // States::InSelectInTable(state) => state.on_token(parser, input),
+            // States::InTemplate(state) => state.on_token(parser, input),
+            States::AfterBody(state) => state.on_token(parser, input),
+            // States::InFrameset(state) => state.on_token(parser, input),
+            // States::AfterFrameset(state) => state.on_token(parser, input),
+            States::AfterAfterBody(state) => state.on_token(parser, input),
+            // States::AfterAfterFrameset(state) => state.on_token(parser, input),
             _ => Err(errors::StateTransitionError::new(self, "Token")).into(),
         }
     }
@@ -282,10 +280,8 @@ impl States {
     where
         R: io::Read + io::Seek,
     {
-        use StateMachineMessages::*;
-
         match input {
-            Token(token) => self.on_token(parser, token),
+            StateMachineMessages::Token(token) => self.on_token(parser, token),
         }
     }
 

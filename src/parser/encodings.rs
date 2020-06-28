@@ -60,6 +60,7 @@ pub fn get() -> &'static Encodings {
     })
 }
 
+#[must_use]
 pub fn get_encoding(name: &str) -> Option<&'static Encoding> {
     let encodings = get();
     encodings.iter().find(|e| {

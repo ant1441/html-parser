@@ -22,10 +22,10 @@ use self::{
     states::{Character, NamedCharacterReference, States},
 };
 
+pub use named_character_references::{get_entities, Entity};
 pub(crate) use tagname::TagName;
 pub(crate) use token::Token;
 pub(crate) use transition_result::TransitionResult;
-pub use named_character_references::{Entity, get_entities};
 
 type Emit = Vec<Token>;
 
@@ -120,18 +120,17 @@ where
                 // U+000D CR U+000A LF (\r\n) code point pair with a single
                 // U+000A LF (\n) code point, and then replace every remaining
                 // U+000D CR (\r) code point with a U+000A LF (\n) code point.
-                Ok("\r") => match self.peek_next_character()? {
-                    Character::Char('\n') => {
+                Ok("\r") => {
+                    if let Character::Char('\n') = self.peek_next_character()? {
                         // Remove the '\r' from potential_char, the '\n' found next will be handled
                         let _ = potential_char.pop();
                         continue;
-                    }
-                    _ => {
+                    } else {
                         // Replace the '\r' in potential_char with '\n'
                         trace!("Replacing lone \\r with \\n");
                         Ok('\n'.into())
                     }
-                },
+                }
                 Ok(c) => Ok(c.chars().next().unwrap().into()),
                 e @ Err(_) if potential_char.len() == 4 => {
                     debug!("Invalid UTF8: {:x?}", potential_char);
@@ -238,12 +237,12 @@ where
                     self.token_emit_cache.borrow_mut().push(token);
                 } else if let Some(mut cached_token) = self.characters_emit_cache.take() {
                     // Take the cached_token, and add the current char to it
-                    cached_token.push_token(token.to_owned());
+                    cached_token.push_token(&token);
                     self.characters_emit_cache.set(Some(cached_token));
                 } else {
                     // Make a new Token::Characters, from the current char
                     let mut cached_token = Token::Characters(String::new());
-                    cached_token.push_token(token.to_owned());
+                    cached_token.push_token(&token);
                     self.characters_emit_cache.set(Some(cached_token));
                 }
             } else {
@@ -298,11 +297,11 @@ where
                 States::Term(_) => return None,
                 States::MarkupDeclarationOpen(ref m) => {
                     if self.next_few_characters_are("--", false).unwrap() {
-                        state.on_next_few_characters(Some("--".to_string()).into())
+                        state.on_next_few_characters(&Some("--".to_string()).into())
                     } else if self.next_few_characters_are("DOCTYPE", true).unwrap() {
-                        state.on_next_few_characters(Some("DOCTYPE".to_string()).into())
+                        state.on_next_few_characters(&Some("DOCTYPE".to_string()).into())
                     } else if self.next_few_characters_are("[CDATA[", false).unwrap() {
-                        state.on_next_few_characters(Some("[CDATA[".to_string()).into())
+                        state.on_next_few_characters(&Some("[CDATA[".to_string()).into())
                     } else {
                         todo!("MarkupDeclarationOpen::{:?}", m);
                     }

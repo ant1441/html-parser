@@ -460,16 +460,12 @@ impl States {
         States::Data(Data {})
     }
 
-    pub(super) fn rc_data<TMP: ToString>(tmp: TMP) -> Self {
-        States::RcData(RcData {
-            tmp: tmp.to_string(),
-        })
+    pub(super) fn rc_data(tmp: String) -> Self {
+        States::RcData(RcData { tmp })
     }
 
-    pub(super) fn raw_text<TMP: ToString>(tmp: TMP) -> Self {
-        States::RawText(RawText {
-            tmp: tmp.to_string(),
-        })
+    pub(super) fn raw_text(tmp: String) -> Self {
+        States::RawText(RawText { tmp })
     }
 
     pub(super) fn script_data() -> Self {
@@ -494,41 +490,33 @@ impl States {
         })
     }
 
-    pub(super) fn rc_data_less_than_sign<TMP: ToString>(tmp: TMP) -> Self {
-        States::RcDataLessThanSign(RcDataLessThanSign {
-            tmp: tmp.to_string(),
-        })
+    pub(super) fn rc_data_less_than_sign(tmp: String) -> Self {
+        States::RcDataLessThanSign(RcDataLessThanSign { tmp })
     }
 
-    pub(super) fn rc_data_end_tag_open<TMP: ToString>(tmp: TMP) -> Self {
-        States::RcDataEndTagOpen(RcDataEndTagOpen {
-            tmp: tmp.to_string(),
-        })
+    pub(super) fn rc_data_end_tag_open(tmp: String) -> Self {
+        States::RcDataEndTagOpen(RcDataEndTagOpen { tmp })
     }
 
-    pub(super) fn rc_data_end_tag_name<T: Into<Token>, TMP: ToString>(token: T, tmp: TMP) -> Self {
+    pub(super) fn rc_data_end_tag_name<T: Into<Token>>(token: T, tmp: String) -> Self {
         States::RcDataEndTagName(RcDataEndTagName {
             token: token.into(),
-            tmp: tmp.to_string(),
+            tmp,
         })
     }
 
-    pub(super) fn raw_text_less_than_sign<TMP: ToString>(tmp: TMP) -> Self {
-        States::RawTextLessThanSign(RawTextLessThanSign {
-            tmp: tmp.to_string(),
-        })
+    pub(super) fn raw_text_less_than_sign(tmp: String) -> Self {
+        States::RawTextLessThanSign(RawTextLessThanSign { tmp })
     }
 
-    pub(super) fn raw_text_end_tag_open<TMP: ToString>(tmp: TMP) -> Self {
-        States::RawTextEndTagOpen(RawTextEndTagOpen {
-            tmp: tmp.to_string(),
-        })
+    pub(super) fn raw_text_end_tag_open(tmp: String) -> Self {
+        States::RawTextEndTagOpen(RawTextEndTagOpen { tmp })
     }
 
-    pub(super) fn raw_text_end_tag_name<T: Into<Token>, TMP: ToString>(token: T, tmp: TMP) -> Self {
+    pub(super) fn raw_text_end_tag_name<T: Into<Token>>(token: T, tmp: String) -> Self {
         States::RawTextEndTagName(RawTextEndTagName {
             token: token.into(),
-            tmp: tmp.to_string(),
+            tmp,
         })
     }
 
@@ -798,95 +786,80 @@ impl States {
         States::CdataSectionEnd(CdataSectionEnd {})
     }
 
-    pub(super) fn character_reference<S: Into<States>, TMP: ToString>(
-        return_state: S,
-        tmp: TMP,
-    ) -> Self {
+    pub(super) fn character_reference<S: Into<States>>(return_state: S, tmp: String) -> Self {
         States::CharacterReference(CharacterReference {
             return_state: Box::new(return_state.into()),
-            tmp: tmp.to_string(),
+            tmp,
         })
     }
 
-    pub(super) fn named_character_reference<TMP: ToString>(
-        return_state: Box<States>,
-        tmp: TMP,
-    ) -> Self {
-        States::NamedCharacterReference(NamedCharacterReference {
-            return_state,
-            tmp: tmp.to_string(),
-        })
+    pub(super) fn named_character_reference(return_state: Box<States>, tmp: String) -> Self {
+        States::NamedCharacterReference(NamedCharacterReference { return_state, tmp })
     }
 
     pub(super) fn ambiguous_ampersand(return_state: Box<States>) -> Self {
         States::AmbiguousAmpersand(AmbiguousAmpersand { return_state })
     }
 
-    pub(super) fn numeric_character_reference<TMP: ToString>(
-        return_state: Box<States>,
-        tmp: TMP,
-    ) -> Self {
-        States::NumericCharacterReference(NumericCharacterReference {
-            return_state,
-            tmp: tmp.to_string(),
-        })
+    pub(super) fn numeric_character_reference(return_state: Box<States>, tmp: String) -> Self {
+        States::NumericCharacterReference(NumericCharacterReference { return_state, tmp })
     }
 
-    pub(super) fn hexadecimal_character_reference_start<TMP: ToString>(
+    pub(super) fn hexadecimal_character_reference_start(
         return_state: Box<States>,
-        tmp: TMP,
+        tmp: String,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::HexadecimalCharacterReferenceStart(HexadecimalCharacterReferenceStart {
             return_state,
-            tmp: tmp.to_string(),
+            tmp,
             character_reference_code,
         })
     }
 
-    pub(super) fn decimal_character_reference_start<TMP: ToString>(
+    pub(super) fn decimal_character_reference_start(
         return_state: Box<States>,
-        tmp: TMP,
+        tmp: String,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::DecimalCharacterReferenceStart(DecimalCharacterReferenceStart {
             return_state,
-            tmp: tmp.to_string(),
+            tmp,
             character_reference_code,
         })
     }
 
-    pub(super) fn hexadecimal_character_reference<TMP: ToString>(
+    pub(super) fn hexadecimal_character_reference(
         return_state: Box<States>,
-        tmp: TMP,
+        tmp: String,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::HexadecimalCharacterReference(HexadecimalCharacterReference {
             return_state,
-            tmp: tmp.to_string(),
+            tmp,
             character_reference_code,
         })
     }
 
-    pub(super) fn decimal_character_reference<TMP: ToString>(
+    pub(super) fn decimal_character_reference(
         return_state: Box<States>,
-        tmp: TMP,
+        tmp: String,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::DecimalCharacterReference(DecimalCharacterReference {
-            tmp: tmp.to_string(),
+            tmp,
             return_state,
             character_reference_code,
         })
     }
 
-    pub(super) fn numeric_character_reference_end<TMP: ToString>(
+    pub(super) fn numeric_character_reference_end(
         return_state: Box<States>,
-        tmp: TMP,
+        tmp: String,
         character_reference_code: CharacterReferenceCode,
     ) -> Self {
         States::NumericCharacterReferenceEnd(NumericCharacterReferenceEnd {
-            tmp: tmp.to_string(),
+            tmp,
             return_state,
             character_reference_code,
         })
@@ -899,89 +872,87 @@ impl States {
     // Transitions
 
     pub(super) fn on_character(self, input: Character) -> TransitionResult {
-        use States::*;
-
         match self {
-            Data(state) => state.on_character(input),
-            RcData(state) => state.on_character(input),
-            RawText(state) => state.on_character(input),
-            ScriptData(state) => state.on_character(input),
-            PlainText(state) => state.on_character(input),
-            TagOpen(state) => state.on_character(input),
-            EndTagOpen(state) => state.on_character(input),
-            TagName(state) => state.on_character(input),
-            RcDataLessThanSign(state) => state.on_character(input),
-            RcDataEndTagOpen(state) => state.on_character(input),
-            // RcDataEndTagName(state) => (see on_character_and_last_start_tag)
-            RawTextLessThanSign(state) => state.on_character(input),
-            RawTextEndTagOpen(state) => state.on_character(input),
-            // RawTextEndTagName(state) => (see on_character_and_last_start_tag)
-            // ScriptDataLessThanSign(state) => state.on_character(input),
-            // ScriptDataEndTagOpen(state) => state.on_character(input),
-            // ScriptDataEndTagName(state) => (see on_character_and_last_start_tag)
-            // ScriptDataEscapeStart(state) => state.on_character(input),
-            // ScriptDataEscapeStartDash(state) => state.on_character(input),
-            // ScriptDataEscaped(state) => state.on_character(input),
-            // ScriptDataEscapedDash(state) => state.on_character(input),
-            // ScriptDataEscapedDashDash(state) => state.on_character(input),
-            // ScriptDataEscapedLessThanSign(state) => state.on_character(input),
-            // ScriptDataEscapedEndTagOpen(state) => state.on_character(input),
-            // ScriptDataEscapedEndTagName(state) => (see on_character_and_last_start_tag)
-            // ScriptDataDoubleEscapeStart(state) => state.on_character(input),
-            // ScriptDataDoubleEscaped(state) => state.on_character(input),
-            // ScriptDataDoubleEscapedDash(state) => state.on_character(input),
-            // ScriptDataDoubleEscapedDashDash(state) => state.on_character(input),
-            // ScriptDataDoubleEscapedLessThanSign(state) => state.on_character(input),
-            // ScriptDataDoubleEscapeEnd(state) => state.on_character(input),
-            BeforeAttributeName(state) => state.on_character(input),
-            AttributeName(state) => state.on_character(input),
-            AfterAttributeName(state) => state.on_character(input),
-            BeforeAttributeValue(state) => state.on_character(input),
-            AttributeValueDoubleQuoted(state) => state.on_character(input),
-            AttributeValueSingleQuoted(state) => state.on_character(input),
-            AttributeValueUnquoted(state) => state.on_character(input),
-            AfterAttributeValueQuoted(state) => state.on_character(input),
-            SelfClosingStartTag(state) => state.on_character(input),
-            BogusComment(state) => state.on_character(input),
-            // MarkupDeclarationOpen (see on_next_few_characters)
-            CommentStart(state) => state.on_character(input),
-            CommentStartDash(state) => state.on_character(input),
-            Comment(state) => state.on_character(input),
-            // CommentLessThanSign(state) => state.on_character(input),
-            // CommentLessThanSignBang(state) => state.on_character(input),
-            // CommentLessThanSignBangDash(state) => state.on_character(input),
-            // CommentLessThanSignBangDashDash(state) => state.on_character(input),
-            CommentEndDash(state) => state.on_character(input),
-            CommentEnd(state) => state.on_character(input),
-            CommentEndBang(state) => state.on_character(input),
-            Doctype(state) => state.on_character(input),
-            BeforeDoctypeName(state) => state.on_character(input),
-            DoctypeName(state) => state.on_character(input),
-            // AfterDoctypeName(state) => state.on_character(input),
-            // AfterDoctypePublicKeyword(state) => state.on_character(input),
-            // BeforeDoctypePublicIdentifier(state) => state.on_character(input),
-            // DoctypePublicIdentifierDoubleQuoted(state) => state.on_character(input),
-            // DoctypePublicIdentifierSingleQuoted(state) => state.on_character(input),
-            // AfterDoctypePublicIdentifier(state) => state.on_character(input),
-            // BetweenDoctypePublicAndSystemIdentifiers(state) => state.on_character(input),
-            // AfterDoctypeSystemKeyword(state) => state.on_character(input),
-            // BeforeDoctypeSystemIdentifier(state) => state.on_character(input),
-            // DoctypeSystemIdentifierDoubleQuoted(state) => state.on_character(input),
-            // DoctypeSystemIdentifierSingleQuoted(state) => state.on_character(input),
-            // AfterDoctypeSystemIdentifier(state) => state.on_character(input),
-            // BogusDoctype(state) => state.on_character(input),
-            // CdataSection(state) => state.on_character(input),
-            // CdataSectionBracket(state) => state.on_character(input),
-            // CdataSectionEnd(state) => state.on_character(input),
-            CharacterReference(state) => state.on_character(input),
-            // NamedCharacterReference (see on_possible_character_reference_with_next_char)
-            AmbiguousAmpersand(state) => state.on_character(input),
-            NumericCharacterReference(state) => state.on_character(input),
-            HexadecimalCharacterReferenceStart(state) => state.on_character(input),
-            DecimalCharacterReferenceStart(state) => state.on_character(input),
-            HexadecimalCharacterReference(state) => state.on_character(input),
-            DecimalCharacterReference(state) => state.on_character(input),
-            // NumericCharacterReferenceEnd (see on_advance)
+            States::Data(state) => state.on_character(input),
+            States::RcData(state) => state.on_character(input),
+            States::RawText(state) => state.on_character(input),
+            States::ScriptData(state) => state.on_character(input),
+            States::PlainText(state) => state.on_character(input),
+            States::TagOpen(state) => state.on_character(input),
+            States::EndTagOpen(state) => state.on_character(input),
+            States::TagName(state) => state.on_character(input),
+            States::RcDataLessThanSign(state) => state.on_character(input),
+            States::RcDataEndTagOpen(state) => state.on_character(input),
+            // States::RcDataEndTagName(state) => (see on_character_and_last_start_tag)
+            States::RawTextLessThanSign(state) => state.on_character(input),
+            States::RawTextEndTagOpen(state) => state.on_character(input),
+            // States::RawTextEndTagName(state) => (see on_character_and_last_start_tag)
+            // States::ScriptDataLessThanSign(state) => state.on_character(input),
+            // States::ScriptDataEndTagOpen(state) => state.on_character(input),
+            // States::ScriptDataEndTagName(state) => (see on_character_and_last_start_tag)
+            // States::ScriptDataEscapeStart(state) => state.on_character(input),
+            // States::ScriptDataEscapeStartDash(state) => state.on_character(input),
+            // States::ScriptDataEscaped(state) => state.on_character(input),
+            // States::ScriptDataEscapedDash(state) => state.on_character(input),
+            // States::ScriptDataEscapedDashDash(state) => state.on_character(input),
+            // States::ScriptDataEscapedLessThanSign(state) => state.on_character(input),
+            // States::ScriptDataEscapedEndTagOpen(state) => state.on_character(input),
+            // States::ScriptDataEscapedEndTagName(state) => (see on_character_and_last_start_tag)
+            // States::ScriptDataDoubleEscapeStart(state) => state.on_character(input),
+            // States::ScriptDataDoubleEscaped(state) => state.on_character(input),
+            // States::ScriptDataDoubleEscapedDash(state) => state.on_character(input),
+            // States::ScriptDataDoubleEscapedDashDash(state) => state.on_character(input),
+            // States::ScriptDataDoubleEscapedLessThanSign(state) => state.on_character(input),
+            // States::ScriptDataDoubleEscapeEnd(state) => state.on_character(input),
+            States::BeforeAttributeName(state) => state.on_character(input),
+            States::AttributeName(state) => state.on_character(input),
+            States::AfterAttributeName(state) => state.on_character(input),
+            States::BeforeAttributeValue(state) => state.on_character(input),
+            States::AttributeValueDoubleQuoted(state) => state.on_character(input),
+            States::AttributeValueSingleQuoted(state) => state.on_character(input),
+            States::AttributeValueUnquoted(state) => state.on_character(input),
+            States::AfterAttributeValueQuoted(state) => state.on_character(input),
+            States::SelfClosingStartTag(state) => state.on_character(input),
+            States::BogusComment(state) => state.on_character(input),
+            // States::MarkupDeclarationOpen (see on_next_few_characters)
+            States::CommentStart(state) => state.on_character(input),
+            States::CommentStartDash(state) => state.on_character(input),
+            States::Comment(state) => state.on_character(input),
+            // States::CommentLessThanSign(state) => state.on_character(input),
+            // States::CommentLessThanSignBang(state) => state.on_character(input),
+            // States::CommentLessThanSignBangDash(state) => state.on_character(input),
+            // States::CommentLessThanSignBangDashDash(state) => state.on_character(input),
+            States::CommentEndDash(state) => state.on_character(input),
+            States::CommentEnd(state) => state.on_character(input),
+            States::CommentEndBang(state) => state.on_character(input),
+            States::Doctype(state) => state.on_character(input),
+            States::BeforeDoctypeName(state) => state.on_character(input),
+            States::DoctypeName(state) => state.on_character(input),
+            // States::AfterDoctypeName(state) => state.on_character(input),
+            // States::AfterDoctypePublicKeyword(state) => state.on_character(input),
+            // States::BeforeDoctypePublicIdentifier(state) => state.on_character(input),
+            // States::DoctypePublicIdentifierDoubleQuoted(state) => state.on_character(input),
+            // States::DoctypePublicIdentifierSingleQuoted(state) => state.on_character(input),
+            // States::AfterDoctypePublicIdentifier(state) => state.on_character(input),
+            // States::BetweenDoctypePublicAndSystemIdentifiers(state) => state.on_character(input),
+            // States::AfterDoctypeSystemKeyword(state) => state.on_character(input),
+            // States::BeforeDoctypeSystemIdentifier(state) => state.on_character(input),
+            // States::DoctypeSystemIdentifierDoubleQuoted(state) => state.on_character(input),
+            // States::DoctypeSystemIdentifierSingleQuoted(state) => state.on_character(input),
+            // States::AfterDoctypeSystemIdentifier(state) => state.on_character(input),
+            // States::BogusDoctype(state) => state.on_character(input),
+            // States::CdataSection(state) => state.on_character(input),
+            // States::CdataSectionBracket(state) => state.on_character(input),
+            // States::CdataSectionEnd(state) => state.on_character(input),
+            States::CharacterReference(state) => state.on_character(input),
+            // States::NamedCharacterReference (see on_possible_character_reference_with_next_char)
+            States::AmbiguousAmpersand(state) => state.on_character(input),
+            States::NumericCharacterReference(state) => state.on_character(input),
+            States::HexadecimalCharacterReferenceStart(state) => state.on_character(input),
+            States::DecimalCharacterReferenceStart(state) => state.on_character(input),
+            States::HexadecimalCharacterReference(state) => state.on_character(input),
+            States::DecimalCharacterReference(state) => state.on_character(input),
+            // States::NumericCharacterReferenceEnd (see on_advance)
             _ => Err(errors::StateTransitionError::new(self, "Character")).into(),
         }
     }
@@ -990,13 +961,11 @@ impl States {
         self,
         input: CharacterAndLastStartTag,
     ) -> TransitionResult {
-        use States::*;
-
         match self {
-            RcDataEndTagName(state) => state.on_character_and_last_start_tag(input),
-            RawTextEndTagName(state) => state.on_character_and_last_start_tag(input),
-            // ScriptDataEndTagName(state) => state.on_character_and_last_start_tag(input),
-            // ScriptDataEscapedEndTagName(state) => state.on_character_and_last_start_tag(input),
+            States::RcDataEndTagName(state) => state.on_character_and_last_start_tag(input),
+            States::RawTextEndTagName(state) => state.on_character_and_last_start_tag(input),
+            // States::ScriptDataEndTagName(state) => state.on_character_and_last_start_tag(input),
+            // States::ScriptDataEscapedEndTagName(state) => state.on_character_and_last_start_tag(input),
             _ => Err(errors::StateTransitionError::new(
                 self,
                 "CharacterAndLastStartTag",
@@ -1012,7 +981,7 @@ impl States {
         }
     }
 
-    pub(super) fn on_next_few_characters(self, input: NextFewCharacters) -> TransitionResult {
+    pub(super) fn on_next_few_characters(self, input: &NextFewCharacters) -> TransitionResult {
         match self {
             States::MarkupDeclarationOpen(state) => state.on_next_few_characters(input),
             _ => Err(errors::StateTransitionError::new(self, "NextFewCharacters")).into(),
@@ -1036,16 +1005,18 @@ impl States {
     }
 
     pub(super) fn execute(self, input: StateMachineMessages) -> TransitionResult {
-        use StateMachineMessages::*;
-
         match input {
-            Advance => self.on_advance(),
-            NextFewCharacters(message) => self.on_next_few_characters(message),
-            PossibleCharacterReferenceWithNextChar(message) => {
+            StateMachineMessages::Advance => self.on_advance(),
+            StateMachineMessages::NextFewCharacters(message) => {
+                self.on_next_few_characters(&message)
+            }
+            StateMachineMessages::PossibleCharacterReferenceWithNextChar(message) => {
                 self.on_possible_character_reference_with_next_char(message)
             }
-            Character(message) => self.on_character(message),
-            CharacterAndLastStartTag(message) => self.on_character_and_last_start_tag(message),
+            StateMachineMessages::Character(message) => self.on_character(message),
+            StateMachineMessages::CharacterAndLastStartTag(message) => {
+                self.on_character_and_last_start_tag(message)
+            }
         }
     }
 

@@ -200,6 +200,7 @@ impl Default for TagName {
 impl std::str::FromStr for TagName {
     type Err = &'static str;
 
+    #[allow(clippy::too_many_lines, clippy::enum_glob_use)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use TagName::*;
 
@@ -363,6 +364,7 @@ impl std::str::FromStr for TagName {
 }
 
 impl PartialEq for TagName {
+    #[allow(clippy::too_many_lines, clippy::enum_glob_use)]
     fn eq(&self, other: &Self) -> bool {
         use TagName::*;
 
@@ -553,6 +555,7 @@ impl std::hash::Hash for TagName {
 }
 
 impl std::fmt::Display for TagName {
+    #[allow(clippy::too_many_lines, clippy::enum_glob_use)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use TagName::*;
 

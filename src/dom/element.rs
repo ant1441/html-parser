@@ -115,6 +115,7 @@ impl Element {
     }
 
     #[must_use]
+    #[allow(clippy::too_many_lines)]
     pub fn category(&self) -> Category {
         if self.namespace == Namespace::HTML {
             match self.name {

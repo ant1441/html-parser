@@ -72,34 +72,33 @@ impl Default for ForceQuirksFlag {
 }
 
 impl Token {
+    #[allow(clippy::match_same_arms)]
     pub(crate) fn push(&mut self, c: char) {
-        use Token::*;
         match self {
-            Doctype(t) => t.push(c),
-            StartTag(t) => t.push(c),
-            EndTag(t) => t.push(c),
-            Comment(t) => t.push(c),
-            Characters(t) => t.push(c),
-            Character(_) | Eof => panic!("Cannot push on {:?}", self),
+            Token::Doctype(t) => t.push(c),
+            Token::StartTag(t) => t.push(c),
+            Token::EndTag(t) => t.push(c),
+            Token::Comment(t) => t.push(c),
+            Token::Characters(t) => t.push(c),
+            Token::Character(_) | Token::Eof => panic!("Cannot push on {:?}", self),
         }
     }
 
+    #[allow(clippy::match_same_arms)]
     pub(crate) fn push_str(&mut self, string: &str) {
-        use Token::*;
         match self {
-            Doctype(t) => t.push_str(string),
-            StartTag(t) => t.push_str(string),
-            EndTag(t) => t.push_str(string),
-            Comment(t) => t.push_str(string),
-            Characters(t) => t.push_str(string),
-            Character(_) | Eof => panic!("Cannot push on {:?}", self),
+            Token::Doctype(t) => t.push_str(string),
+            Token::StartTag(t) => t.push_str(string),
+            Token::EndTag(t) => t.push_str(string),
+            Token::Comment(t) => t.push_str(string),
+            Token::Characters(t) => t.push_str(string),
+            Token::Character(_) | Token::Eof => panic!("Cannot push on {:?}", self),
         }
     }
 
-    pub(crate) fn push_token(&mut self, token: Token) {
-        use Token::*;
-        match token {
-            Character(c) => self.push(c),
+    pub(crate) fn push_token(&mut self, token: &Token) {
+        match *token {
+            Token::Character(c) => self.push(c),
             _ => panic!("Cannot push_tokens on {:?}", self),
         }
     }
@@ -148,10 +147,10 @@ impl Token {
         }
     }
 
-    pub(crate) fn add_attribute<S1: ToString, S2: ToString>(&mut self, name: S1, value: S2) {
+    pub(crate) fn add_attribute(&mut self, name: String, value: String) {
         match self {
-            Token::StartTag(t) => t.add_attribute(name.to_string(), value.to_string()),
-            Token::EndTag(t) => t.add_attribute(name.to_string(), value.to_string()),
+            Token::StartTag(t) => t.add_attribute(name, value),
+            Token::EndTag(t) => t.add_attribute(name, value),
             _ => panic!("Cannot add_attribute on {:?}", self),
         }
     }
@@ -199,15 +198,14 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use Token::*;
         match self {
-            Doctype(t) => write!(f, "{}", t),
-            StartTag(t) => write!(f, "{}", t),
-            EndTag(t) => write!(f, "{}", t),
-            Comment(t) => write!(f, "Comment({})", t),
-            Characters(t) => write!(f, "Characters({:?})", t),
-            Character(t) => write!(f, "Character({:?})", t),
-            Eof => write!(f, "Token(EOF)"),
+            Token::Doctype(t) => write!(f, "{}", t),
+            Token::StartTag(t) => write!(f, "{}", t),
+            Token::EndTag(t) => write!(f, "{}", t),
+            Token::Comment(t) => write!(f, "Comment({})", t),
+            Token::Characters(t) => write!(f, "Characters({:?})", t),
+            Token::Character(t) => write!(f, "Character({:?})", t),
+            Token::Eof => write!(f, "Token(EOF)"),
         }
     }
 }
@@ -317,7 +315,7 @@ impl StartTag {
 impl fmt::Display for StartTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "<{}", self.name)?;
-        for attribute in self.attributes.iter() {
+        for attribute in &self.attributes {
             write!(f, " {}", attribute.name)?;
             if !attribute.value.is_empty() {
                 write!(f, "=\"{}\"", attribute.value)?;
@@ -383,7 +381,7 @@ impl fmt::Display for EndTag {
         assert!(self.self_closing == SelfClosingFlag::Unset, "`tokenizer::token::EndTag` doesn't implement `std::fmt::Display` when `self_closing` is set");
 
         write!(f, "</{}", self.name)?;
-        for attribute in self.attributes.iter() {
+        for attribute in &self.attributes {
             write!(f, " {}", attribute.name)?;
             if !attribute.value.is_empty() {
                 write!(f, "=\"{}\"", attribute.value)?;

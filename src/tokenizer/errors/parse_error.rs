@@ -197,75 +197,103 @@ impl error::Error for ParseError {
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use ParseError::*;
         match self {
-            AbruptClosingOfEmptyComment => write!(f, "AbruptClosingOfEmptyComment"),
-            AbruptDoctypePublicIdentifier => write!(f, "AbruptDoctypePublicIdentifier"),
-            AbruptDoctypeSystemIdentifier => write!(f, "AbruptDoctypeSystemIdentifier"),
-            AbsenceOfDigitsInNumericCharacterReference => {
+            ParseError::AbruptClosingOfEmptyComment => write!(f, "AbruptClosingOfEmptyComment"),
+            ParseError::AbruptDoctypePublicIdentifier => write!(f, "AbruptDoctypePublicIdentifier"),
+            ParseError::AbruptDoctypeSystemIdentifier => write!(f, "AbruptDoctypeSystemIdentifier"),
+            ParseError::AbsenceOfDigitsInNumericCharacterReference => {
                 write!(f, "AbsenceOfDigitsInNumericCharacterReference")
             }
-            CdataInHtmlContent => write!(f, "CdataInHtmlContent"),
-            CharacterReferenceOutsideUnicodeRange => write!(f, "CharacterReferenceOutsideUnicodeRange"),
-            ControlCharacterInInputStream => write!(f, "ControlCharacterInInputStream"),
-            ControlCharacterReference => write!(f, "ControlCharacterReference"),
-            EndTagWithAttributes => write!(f, "EndTagWithAttributes"),
-            DuplicateAttribute => write!(f, "DuplicateAttribute"),
-            EndTagWithTrailingSolidus => write!(f, "EndTagWithTrailingSolidus"),
-            EofBeforeTagName => write!(f, "EofBeforeTagName"),
-            EofInCdata => write!(f, "EofInCdata"),
-            EofInComment => write!(f, "EofInComment"),
-            EofInDoctype => write!(f, "EofInDoctype"),
-            EofInScriptHtmlCommentLikeText => write!(f, "EofInScriptHtmlCommentLikeText"),
-            EofInTag => write!(f, "EofInTag"),
-            IncorrectlyClosedComment => write!(f, "IncorrectlyClosedComment"),
-            IncorrectlyOpenedComment => write!(f, "IncorrectlyOpenedComment"),
-            InvalidCharacterSequenceAfterDoctypeName => write!(f, "InvalidCharacterSequenceAfterDoctypeName"),
-            InvalidFirstCharacterOfTagName => write!(f, "InvalidFirstCharacterOfTagName"),
-            MissingAttributeValue => write!(f, "MissingAttributeValue"),
-            MissingDoctypeName => write!(f, "MissingDoctypeName"),
-            MissingDoctypePublicIdentifier => write!(f, "MissingDoctypePublicIdentifier"),
-            MissingDoctypeSystemIdentifier => write!(f, "MissingDoctypeSystemIdentifier"),
-            MissingEndTagName => write!(f, "MissingEndTagName"),
-            MissingQuoteBeforeDoctypePublicIdentifier => {
+            ParseError::CdataInHtmlContent => write!(f, "CdataInHtmlContent"),
+            ParseError::CharacterReferenceOutsideUnicodeRange => {
+                write!(f, "CharacterReferenceOutsideUnicodeRange")
+            }
+            ParseError::ControlCharacterInInputStream => write!(f, "ControlCharacterInInputStream"),
+            ParseError::ControlCharacterReference => write!(f, "ControlCharacterReference"),
+            ParseError::EndTagWithAttributes => write!(f, "EndTagWithAttributes"),
+            ParseError::DuplicateAttribute => write!(f, "DuplicateAttribute"),
+            ParseError::EndTagWithTrailingSolidus => write!(f, "EndTagWithTrailingSolidus"),
+            ParseError::EofBeforeTagName => write!(f, "EofBeforeTagName"),
+            ParseError::EofInCdata => write!(f, "EofInCdata"),
+            ParseError::EofInComment => write!(f, "EofInComment"),
+            ParseError::EofInDoctype => write!(f, "EofInDoctype"),
+            ParseError::EofInScriptHtmlCommentLikeText => {
+                write!(f, "EofInScriptHtmlCommentLikeText")
+            }
+            ParseError::EofInTag => write!(f, "EofInTag"),
+            ParseError::IncorrectlyClosedComment => write!(f, "IncorrectlyClosedComment"),
+            ParseError::IncorrectlyOpenedComment => write!(f, "IncorrectlyOpenedComment"),
+            ParseError::InvalidCharacterSequenceAfterDoctypeName => {
+                write!(f, "InvalidCharacterSequenceAfterDoctypeName")
+            }
+            ParseError::InvalidFirstCharacterOfTagName => {
+                write!(f, "InvalidFirstCharacterOfTagName")
+            }
+            ParseError::MissingAttributeValue => write!(f, "MissingAttributeValue"),
+            ParseError::MissingDoctypeName => write!(f, "MissingDoctypeName"),
+            ParseError::MissingDoctypePublicIdentifier => {
+                write!(f, "MissingDoctypePublicIdentifier")
+            }
+            ParseError::MissingDoctypeSystemIdentifier => {
+                write!(f, "MissingDoctypeSystemIdentifier")
+            }
+            ParseError::MissingEndTagName => write!(f, "MissingEndTagName"),
+            ParseError::MissingQuoteBeforeDoctypePublicIdentifier => {
                 write!(f, "MissingQuoteBeforeDoctypePublicIdentifier")
             }
-            MissingQuoteBeforeDoctypeSystemIdentifier => {
+            ParseError::MissingQuoteBeforeDoctypeSystemIdentifier => {
                 write!(f, "MissingQuoteBeforeDoctypeSystemIdentifier")
             }
-            MissingSemicolonAfterCharacterReference => write!(f, "MissingSemicolonAfterCharacterReference"),
-            MissingWhitespaceAfterDoctypePublicKeyword => {
+            ParseError::MissingSemicolonAfterCharacterReference => {
+                write!(f, "MissingSemicolonAfterCharacterReference")
+            }
+            ParseError::MissingWhitespaceAfterDoctypePublicKeyword => {
                 write!(f, "MissingWhitespaceAfterDoctypePublicKeyword")
             }
-            MissingWhitespaceAfterDoctypeSystemKeyword => {
+            ParseError::MissingWhitespaceAfterDoctypeSystemKeyword => {
                 write!(f, "MissingWhitespaceAfterDoctypeSystemKeyword")
             }
-            MissingWhitespaceBeforeDoctypeName => write!(f, "MissingWhitespaceBeforeDoctypeName"),
-            MissingWhitespaceBetweenAttributes => write!(f, "MissingWhitespaceBetweenAttributes"),
-            MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers => {
-                write!(f, "MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers")
+            ParseError::MissingWhitespaceBeforeDoctypeName => {
+                write!(f, "MissingWhitespaceBeforeDoctypeName")
             }
-            NestedComment => write!(f, "NestedComment"),
-            NoncharacterCharacterReference => write!(f, "NoncharacterCharacterReference"),
-            NoncharacterInInputStream => write!(f, "NoncharacterInInputStream"),
-            NonVoidHtmlElementStartTagWithTrailingSolidus => {
+            ParseError::MissingWhitespaceBetweenAttributes => {
+                write!(f, "MissingWhitespaceBetweenAttributes")
+            }
+            ParseError::MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers => write!(
+                f,
+                "MissingWhitespaceBetweenDoctypePublicAndSystemIdentifiers"
+            ),
+            ParseError::NestedComment => write!(f, "NestedComment"),
+            ParseError::NoncharacterCharacterReference => {
+                write!(f, "NoncharacterCharacterReference")
+            }
+            ParseError::NoncharacterInInputStream => write!(f, "NoncharacterInInputStream"),
+            ParseError::NonVoidHtmlElementStartTagWithTrailingSolidus => {
                 write!(f, "NonVoidHtmlElementStartTagWithTrailingSolidus")
             }
-            NullCharacterReference => write!(f, "NullCharacterReference"),
-            SurrogateCharacterReference => write!(f, "SurrogateCharacterReference"),
-            SurrogateInInputStream => write!(f, "SurrogateInInputStream"),
-            UnexpectedCharacterAfterDoctypeSystemIdentifier => {
+            ParseError::NullCharacterReference => write!(f, "NullCharacterReference"),
+            ParseError::SurrogateCharacterReference => write!(f, "SurrogateCharacterReference"),
+            ParseError::SurrogateInInputStream => write!(f, "SurrogateInInputStream"),
+            ParseError::UnexpectedCharacterAfterDoctypeSystemIdentifier => {
                 write!(f, "UnexpectedCharacterAfterDoctypeSystemIdentifier")
             }
-            UnexpectedCharacterInAttributeName => write!(f, "UnexpectedCharacterInAttributeName"),
-            UnexpectedCharacterInUnquotedAttributeValue => {
+            ParseError::UnexpectedCharacterInAttributeName => {
+                write!(f, "UnexpectedCharacterInAttributeName")
+            }
+            ParseError::UnexpectedCharacterInUnquotedAttributeValue => {
                 write!(f, "UnexpectedCharacterInUnquotedAttributeValue")
             }
-            UnexpectedEqualsSignBeforeAttributeName => write!(f, "UnexpectedEqualsSignBeforeAttributeName"),
-            UnexpectedNullCharacter => write!(f, "UnexpectedNullCharacter"),
-            UnexpectedQuestionMarkInsteadOfTagName => write!(f, "UnexpectedQuestionMarkInsteadOfTagName"),
-            UnexpectedSolidusInTag => write!(f, "UnexpectedSolidusInTag"),
-            UnknownNamedCharacterReference => write!(f, "UnknownNamedCharacterReference"),
+            ParseError::UnexpectedEqualsSignBeforeAttributeName => {
+                write!(f, "UnexpectedEqualsSignBeforeAttributeName")
+            }
+            ParseError::UnexpectedNullCharacter => write!(f, "UnexpectedNullCharacter"),
+            ParseError::UnexpectedQuestionMarkInsteadOfTagName => {
+                write!(f, "UnexpectedQuestionMarkInsteadOfTagName")
+            }
+            ParseError::UnexpectedSolidusInTag => write!(f, "UnexpectedSolidusInTag"),
+            ParseError::UnknownNamedCharacterReference => {
+                write!(f, "UnknownNamedCharacterReference")
+            }
         }
     }
 }

@@ -2,11 +2,11 @@ use std::io;
 
 use crate::{
     dom,
-    parser::{states::*, Parser, TransitionResult, parse_error},
+    parser::{states::{self, States}, Parser, TransitionResult, parse_error},
     tokenizer::{TagName, Token},
 };
 
-impl BeforeHtml {
+impl states::BeforeHtml {
     pub(in crate::parser) fn on_token<R>(
         self,
         parser: &mut Parser<R>,

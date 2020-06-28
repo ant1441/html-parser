@@ -1,6 +1,10 @@
+#![warn(missing_debug_implementations, rust_2018_idioms, clippy::redundant_closure_for_method_calls)]
+#![deny(unused_import_braces, clippy::unseparated_literal_suffix, clippy::default_trait_access, clippy::blacklisted_name)]
+// Temporary...
 #![allow(dead_code)]
-#![warn(missing_debug_implementations, rust_2018_idioms)]
-#![deny(unused_import_braces)]
+
+// Too noisy for regular use, but useful for refactoring
+// #![warn(clippy::pedantic)]
 
 pub mod dom;
 pub mod parser;

@@ -1,3 +1,5 @@
+#![allow(clippy::wildcard_imports, clippy::unused_self)]
+
 use log::trace;
 
 use crate::tokenizer::{
@@ -41,7 +43,7 @@ impl Data {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(U_AMPERSAND) => {
-                States::character_reference(self, "").into_transition_result()
+                States::character_reference(self, String::new()).into_transition_result()
             }
             Character::Char(U_LESS_THAN_SIGN) => States::tag_open().into_transition_result(),
             Character::Char(U_NULL) => {
@@ -69,7 +71,7 @@ impl RcData {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(U_AMPERSAND) => {
-                States::character_reference(self, "").into_transition_result()
+                States::character_reference(self, String::new()).into_transition_result()
             }
             Character::Char(U_LESS_THAN_SIGN) => {
                 States::rc_data_less_than_sign(self.tmp).into_transition_result()
@@ -183,7 +185,7 @@ impl TagOpen {
                 ret
             }
             Character::Char(U_QUESTION_MARK) => {
-                let mut ret = States::bogus_comment("").into_transition_result();
+                let mut ret = States::bogus_comment(String::new()).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedQuestionMarkInsteadOfTagName);
                 ret.set_reconsume();
                 ret
@@ -229,7 +231,7 @@ impl EndTagOpen {
                 ret
             }
             _ => {
-                let mut ret = States::bogus_comment("").into_transition_result();
+                let mut ret = States::bogus_comment(String::new()).into_transition_result();
                 ret.push_parse_error(ParseError::InvalidFirstCharacterOfTagName);
                 ret.set_reconsume();
                 ret
@@ -288,8 +290,9 @@ impl TagName {
 
 impl RcDataLessThanSign {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
+        #[allow(clippy::single_match_else)]
         match c {
-            Character::Char(U_SOLIDUS) => States::rc_data_end_tag_open("").into_transition_result(),
+            Character::Char(U_SOLIDUS) => States::rc_data_end_tag_open(String::new()).into_transition_result(),
             _ => {
                 let mut ret = States::rc_data(self.tmp).into_transition_result();
                 ret.push_emit(U_LESS_THAN_SIGN);
@@ -401,6 +404,7 @@ impl RcDataEndTagName {
 
 impl RawTextLessThanSign {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
+        #[allow(clippy::single_match_else)]
         match c {
             Character::Char(U_SOLIDUS) => {
                 self.tmp = String::new();
@@ -529,13 +533,13 @@ impl BeforeAttributeName {
                 ret
             }
             Character::Char(U_EQUALS_SIGN) => {
-                self.token.add_attribute("=", "");
+                self.token.add_attribute("=".to_string(), String::new());
                 let mut ret = States::attribute_name(self.token).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedEqualsSignBeforeAttributeName);
                 ret
             }
             _ => {
-                self.token.add_attribute("", "");
+                self.token.add_attribute(String::new(), String::new());
                 let mut ret = States::attribute_name(self.token).into_transition_result();
                 ret.set_reconsume();
                 ret
@@ -663,7 +667,7 @@ impl AfterAttributeName {
                 ret
             }
             _ => {
-                self.token.add_attribute("", "");
+                self.token.add_attribute(String::new(), String::new());
 
                 let mut ret = States::attribute_name(self.token).into_transition_result();
                 ret.set_reconsume();
@@ -708,7 +712,7 @@ impl AttributeValueDoubleQuoted {
                 States::after_attribute_value_quoted(self.token).into_transition_result()
             }
             Character::Char(U_AMPERSAND) => {
-                States::character_reference(self, "").into_transition_result()
+                States::character_reference(self, String::new()).into_transition_result()
             }
             Character::Char(U_NULL) => {
                 let attribute = self
@@ -748,7 +752,7 @@ impl AttributeValueSingleQuoted {
                 States::after_attribute_value_quoted(self.token).into_transition_result()
             }
             Character::Char(U_AMPERSAND) => {
-                States::character_reference(self, "").into_transition_result()
+                States::character_reference(self, String::new()).into_transition_result()
             }
             Character::Char(U_NULL) => {
                 let attribute = self
@@ -791,7 +795,7 @@ impl AttributeValueUnquoted {
                 States::before_attribute_name(self.token).into_transition_result()
             }
             Character::Char(U_AMPERSAND) => {
-                States::character_reference(self, "").into_transition_result()
+                States::character_reference(self, String::new()).into_transition_result()
             }
             Character::Char(U_GREATER_THAN_SIGN) => {
                 let mut ret = States::data().into_transition_result();
@@ -930,15 +934,15 @@ impl BogusComment {
 }
 
 impl MarkupDeclarationOpen {
-    pub(super) fn on_next_few_characters(self, next: NextFewCharacters) -> TransitionResult {
+    pub(super) fn on_next_few_characters(self, next: &NextFewCharacters) -> TransitionResult {
         if next.as_ref().is_none() {
-            let mut ret = States::bogus_comment("").into_transition_result();
+            let mut ret = States::bogus_comment(String::new()).into_transition_result();
             ret.push_parse_error(ParseError::IncorrectlyOpenedComment);
             ret
         } else {
             match next.as_ref().as_ref().unwrap().as_str() {
                 "DOCTYPE" => States::doctype().into_transition_result(),
-                "--" => States::comment_start("").into_transition_result(),
+                "--" => States::comment_start(String::new()).into_transition_result(),
                 "[CDATA[" => {
                     // If there is an adjusted current node and it is not an element in the HTML namespace, then switch to the CDATA section state.
                     if let Some(_node) = self.get_adjusted_current_node() {
@@ -1305,13 +1309,11 @@ impl CharacterReference {
 
     fn get_attribute_token(&mut self) -> Option<&mut Token> {
         match *self.return_state {
-            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token }) => {
+            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token })
+            | States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token })
+            | States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => {
                 Some(token)
             }
-            States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token }) => {
-                Some(token)
-            }
-            States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
         }
     }
@@ -1408,13 +1410,11 @@ impl NamedCharacterReference {
 
     fn get_attribute_token(&mut self) -> Option<&mut Token> {
         match *self.return_state {
-            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token }) => {
+            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token })
+            | States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token })
+            | States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => {
                 Some(token)
             }
-            States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token }) => {
-                Some(token)
-            }
-            States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
         }
     }
@@ -1453,13 +1453,11 @@ impl AmbiguousAmpersand {
 
     fn get_attribute_token(&mut self) -> Option<&mut Token> {
         match *self.return_state {
-            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token }) => {
+            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token })
+            | States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token })
+            | States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => {
                 Some(token)
             }
-            States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token }) => {
-                Some(token)
-            }
-            States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
         }
     }
@@ -1527,13 +1525,11 @@ impl HexadecimalCharacterReferenceStart {
 
     fn get_attribute_token(&mut self) -> Option<&mut Token> {
         match *self.return_state {
-            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token }) => {
+            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token })
+            | States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token })
+            | States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => {
                 Some(token)
             }
-            States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token }) => {
-                Some(token)
-            }
-            States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
         }
     }
@@ -1573,13 +1569,11 @@ impl DecimalCharacterReferenceStart {
 
     fn get_attribute_token(&mut self) -> Option<&mut Token> {
         match *self.return_state {
-            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token }) => {
+            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token })
+            | States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token })
+            | States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => {
                 Some(token)
             }
-            States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token }) => {
-                Some(token)
-            }
-            States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
         }
     }
@@ -1708,13 +1702,11 @@ impl NumericCharacterReferenceEnd {
 
     fn get_attribute_token(&mut self) -> Option<&mut Token> {
         match *self.return_state {
-            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token }) => {
+            States::AttributeValueDoubleQuoted(AttributeValueDoubleQuoted { ref mut token })
+            | States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token })
+            | States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => {
                 Some(token)
             }
-            States::AttributeValueSingleQuoted(AttributeValueSingleQuoted { ref mut token }) => {
-                Some(token)
-            }
-            States::AttributeValueUnquoted(AttributeValueUnquoted { ref mut token }) => Some(token),
             _ => None,
         }
     }

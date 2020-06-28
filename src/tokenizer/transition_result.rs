@@ -1,5 +1,5 @@
 //! Transit result is the outcome of a transition
-//! It has a 'next_state', an optional error, and an array of things to be emitted
+//! It has a `next_state`, an optional error, and an array of things to be emitted
 
 use std::cell::Cell;
 
@@ -87,6 +87,7 @@ impl TransitionResult {
     }
 
     pub(super) fn push_parse_error(&mut self, err: ParseError) {
+        let _ = self;
         // TODO: Handle parse errors
         warn!("Parse Error: {}", err);
     }

@@ -3,11 +3,11 @@ use std::io;
 use log::warn;
 
 use crate::{
-    parser::{states::*, transitions, Parser, TransitionResult, parse_error},
+    parser::{states::{self, States}, transitions, Parser, TransitionResult, parse_error},
     tokenizer::{TagName, Token},
 };
 
-impl AfterBody {
+impl states::AfterBody {
     pub(in crate::parser) fn on_token<R>(
         self,
         parser: &mut Parser<R>,
