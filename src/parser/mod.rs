@@ -1,6 +1,6 @@
 use log::error;
 
-mod errors;
+pub mod errors;
 mod list_of_active_formatting_elements;
 mod open_elements_stack;
 mod parser_struct;
@@ -16,13 +16,13 @@ use states::States;
 use transition_result::TransitionResult;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum ScriptingFlag {
+enum ScriptingFlag {
     Enabled,
     Disabled,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum FramesetOkFlag {
+enum FramesetOkFlag {
     Ok,
     NotOk,
 }

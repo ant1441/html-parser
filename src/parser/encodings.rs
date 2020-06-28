@@ -16,8 +16,8 @@ type FileEncodings = Vec<FileSection>;
 
 #[derive(Deserialize, Debug)]
 struct FileSection {
-    pub encodings: Vec<FileEncoding>,
-    pub heading: String,
+    encodings: Vec<FileEncoding>,
+    heading: String,
 }
 
 #[derive(Deserialize, Debug)]

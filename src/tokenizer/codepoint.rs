@@ -16,15 +16,15 @@
 //! > U+0029 can be referred to as "U+0029 RIGHT PARENTHESIS", because even though it renders, this avoids unmatched parentheses.
 //!
 //! Code points are sometimes referred to as characters and in certain contexts are prefixed with "0x" rather than "U+".
-pub type Codepoint = u32;
+pub(crate) type Codepoint = u32;
 
 /// A surrogate is a code point that is in the range U+D800 to U+DFFF, inclusive.
-pub fn is_surrogate(c: Codepoint) -> bool {
+pub(crate) fn is_surrogate(c: Codepoint) -> bool {
     0xD800 <= c && c <= 0xDFFF
 }
 
 /// A scalar value is a code point that is not a surrogate.
-pub fn is_scalar(c: Codepoint) -> bool {
+pub(crate) fn is_scalar(c: Codepoint) -> bool {
     !is_surrogate(c)
 }
 
@@ -33,7 +33,7 @@ pub fn is_scalar(c: Codepoint) -> bool {
 /// U+2FFFF, U+3FFFE, U+3FFFF, U+4FFFE, U+4FFFF, U+5FFFE, U+5FFFF, U+6FFFE, U+6FFFF, U+7FFFE, U+7FFFF, U+8FFFE, U+8FFFF,
 /// U+9FFFE, U+9FFFF, U+AFFFE, U+AFFFF, U+BFFFE, U+BFFFF, U+CFFFE, U+CFFFF, U+DFFFE, U+DFFFF, U+EFFFE, U+EFFFF, U+FFFFE,
 /// U+FFFFF, U+10FFFE, or U+10FFFF.
-pub fn is_noncharacter(c: Codepoint) -> bool {
+pub(crate) fn is_noncharacter(c: Codepoint) -> bool {
     match c {
         c if 0xFDD0 <= c && c <= 0xFDEF => true,
         0xFFFE | 0xFFFF | 0x1FFFE | 0x1FFFF | 0x2FFFE | 0x2FFFF | 0x3FFFE | 0x3FFFF | 0x4FFFE
@@ -47,12 +47,12 @@ pub fn is_noncharacter(c: Codepoint) -> bool {
 
 /// An ASCII code point is a code point in the range U+0000 NULL to U+007F DELETE, inclusive.
 #[allow(clippy::absurd_extreme_comparisons, unused_comparisons)]
-pub fn is_ascii(c: Codepoint) -> bool {
+pub(crate) fn is_ascii(c: Codepoint) -> bool {
     0x0000 <= c && c <= 0x007F
 }
 
 /// An ASCII tab or newline is U+0009 TAB, U+000A LF, or U+000D CR.
-pub fn is_tab_or_newline(c: Codepoint) -> bool {
+pub(crate) fn is_tab_or_newline(c: Codepoint) -> bool {
     match c {
         0x0009 | 0x000A | 0x000D => true,
         _ => false,
@@ -62,7 +62,7 @@ pub fn is_tab_or_newline(c: Codepoint) -> bool {
 /// ASCII whitespace is U+0009 TAB, U+000A LF, U+000C FF, U+000D CR, or U+0020 SPACE.
 ///
 /// "Whitespace" is a mass noun.
-pub fn is_ascii_whitespace(c: Codepoint) -> bool {
+pub(crate) fn is_ascii_whitespace(c: Codepoint) -> bool {
     match c {
         0x0009 | 0x000A | 0x000C | 0x000D | 0x0020 => true,
         _ => false,
@@ -71,57 +71,57 @@ pub fn is_ascii_whitespace(c: Codepoint) -> bool {
 
 /// A C0 control is a code point in the range U+0000 NULL to U+001F INFORMATION SEPARATOR ONE, inclusive.
 #[allow(clippy::absurd_extreme_comparisons)]
-pub fn is_c0_control(c: Codepoint) -> bool {
+pub(crate) fn is_c0_control(c: Codepoint) -> bool {
     c <= 0x0000 && c <= 0x001F
 }
 
 /// A C0 control or space is a C0 control or U+0020 SPACE.
-pub fn is_c0_control_or_space(c: Codepoint) -> bool {
+pub(crate) fn is_c0_control_or_space(c: Codepoint) -> bool {
     is_c0_control(c) || c == 0x0020
 }
 
 /// A control is a C0 control or a code point in the range U+007F DELETE to U+009F APPLICATION PROGRAM COMMAND, inclusive.
-pub fn is_control(c: Codepoint) -> bool {
+pub(crate) fn is_control(c: Codepoint) -> bool {
     0x007F <= c && c <= 0x009F
 }
 
 /// An ASCII digit is a code point in the range U+0030 (0) to U+0039 (9), inclusive.
-pub fn is_ascii_digit(c: Codepoint) -> bool {
+pub(crate) fn is_ascii_digit(c: Codepoint) -> bool {
     '0' as u32 <= c && c <= '9' as u32
 }
 
 /// An ASCII upper hex digit is an ASCII digit or a code point in the range U+0041 (A) to U+0046 (F), inclusive.
-pub fn is_ascii_upper_hex_digit(c: Codepoint) -> bool {
+pub(crate) fn is_ascii_upper_hex_digit(c: Codepoint) -> bool {
     'A' as u32 <= c && c <= 'F' as u32
 }
 
 /// An ASCII lower hex digit is an ASCII digit or a code point in the range U+0061 (a) to U+0066 (f), inclusive.
-pub fn is_ascii_lower_hex_digit(c: Codepoint) -> bool {
+pub(crate) fn is_ascii_lower_hex_digit(c: Codepoint) -> bool {
     'a' as u32 <= c && c <= 'f' as u32
 }
 
 /// An ASCII hex digit is an ASCII upper hex digit or ASCII lower hex digit.
-pub fn is_ascii_hex_digit(c: Codepoint) -> bool {
+pub(crate) fn is_ascii_hex_digit(c: Codepoint) -> bool {
     is_ascii_upper_hex_digit(c) || is_ascii_lower_hex_digit(c)
 }
 
 /// An ASCII upper alpha is a code point in the range U+0041 (A) to U+005A (Z), inclusive.
-pub fn is_ascii_upper_alpha(c: Codepoint) -> bool {
+pub(crate) fn is_ascii_upper_alpha(c: Codepoint) -> bool {
     'A' as u32 <= c && c <= 'Z' as u32
 }
 
 /// An ASCII lower alpha is a code point in the range U+0061 (a) to U+007A (z), inclusive.
-pub fn is_ascii_lower_alpha(c: Codepoint) -> bool {
+pub(crate) fn is_ascii_lower_alpha(c: Codepoint) -> bool {
     'a' as u32 <= c && c <= 'z' as u32
 }
 
 /// An ASCII alpha is an ASCII upper alpha or ASCII lower alpha.
-pub fn is_ascii_alpha(c: Codepoint) -> bool {
+pub(crate) fn is_ascii_alpha(c: Codepoint) -> bool {
     is_ascii_upper_alpha(c) || is_ascii_lower_alpha(c)
 }
 
 /// An ASCII alphanumeric is an ASCII digit or ASCII alpha.
-pub fn is_ascii_alphanumeric(c: Codepoint) -> bool {
+pub(crate) fn is_ascii_alphanumeric(c: Codepoint) -> bool {
     is_ascii_digit(c) || is_ascii_alpha(c)
 }
 

@@ -16,15 +16,15 @@ pub(super) enum ActiveFormattingElementOrMarker {
 }
 
 impl ListOfActiveFormattingElements {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         ListOfActiveFormattingElements { list: Vec::new() }
     }
 
-    pub fn push_marker(&mut self) {
+    pub(crate) fn push_marker(&mut self) {
         self.list.push(ActiveFormattingElementOrMarker::Marker)
     }
 
-    pub fn contains_element(&self, name: &TagName) -> bool {
+    pub(crate) fn contains_element(&self, name: &TagName) -> bool {
         self.list
             .iter()
             .by_ref()
@@ -35,7 +35,7 @@ impl ListOfActiveFormattingElements {
 }
 
 impl ActiveFormattingElementOrMarker {
-    pub fn is_element(&self, name: &TagName) -> bool {
+    pub(crate) fn is_element(&self, name: &TagName) -> bool {
         match self {
             ActiveFormattingElementOrMarker::Marker => false,
             ActiveFormattingElementOrMarker::ActiveFormattingElement(e) => {
@@ -44,7 +44,7 @@ impl ActiveFormattingElementOrMarker {
         }
     }
 
-    pub fn is_marker(&self) -> bool {
+    pub(crate) fn is_marker(&self) -> bool {
         match self {
             ActiveFormattingElementOrMarker::Marker => true,
             ActiveFormattingElementOrMarker::ActiveFormattingElement(_) => false,

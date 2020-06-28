@@ -8,7 +8,7 @@ use std::{
 use log::{debug, trace};
 
 mod codepoint;
-mod errors;
+pub mod errors;
 mod named_character_references;
 mod states;
 mod tagname;
@@ -19,13 +19,13 @@ mod transitions;
 use self::{
     codepoint::Codepoint,
     errors::Result,
-    named_character_references::get_entities,
     states::{Character, NamedCharacterReference, States},
 };
 
 pub(crate) use tagname::TagName;
 pub(crate) use token::Token;
 pub(crate) use transition_result::TransitionResult;
+pub use named_character_references::{Entity, get_entities};
 
 type Emit = Vec<Token>;
 
