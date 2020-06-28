@@ -177,7 +177,7 @@ impl TagOpen {
             }
             Character::Char(U_SOLIDUS) => States::end_tag_open().into_transition_result(),
             Character::Char(a) if a.is_alphabetic() => {
-                let token: StartTag = Default::default();
+                let token = StartTag::default();
                 let mut ret = States::tag_name(token).into_transition_result();
                 ret.set_reconsume();
                 ret
@@ -210,7 +210,7 @@ impl EndTagOpen {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(a) if a.is_alphabetic() => {
-                let token: EndTag = Default::default();
+                let token = EndTag::default();
                 let mut ret = States::tag_name(token).into_transition_result();
                 ret.set_reconsume();
                 ret
@@ -304,7 +304,7 @@ impl RcDataEndTagOpen {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(a) if a.is_alphabetic() => {
-                let token: EndTag = Default::default();
+                let token = EndTag::default();
                 let mut ret =
                     States::rc_data_end_tag_name(token, self.tmp).into_transition_result();
                 ret.set_reconsume();
@@ -420,7 +420,7 @@ impl RawTextEndTagOpen {
     pub(super) fn on_character(self, c: Character) -> TransitionResult {
         match c {
             Character::Char(a) if a.is_alphabetic() => {
-                let token: EndTag = Default::default();
+                let token = EndTag::default();
 
                 let mut ret =
                     States::raw_text_end_tag_name(token, self.tmp).into_transition_result();
@@ -1156,7 +1156,7 @@ impl Doctype {
                 let token = DoctypeToken {
                     name: None,
                     force_quirks: ForceQuirksFlag::On,
-                    ..Default::default()
+                    ..DoctypeToken::default()
                 };
 
                 let mut ret = States::term().into_transition_result();
@@ -1197,7 +1197,7 @@ impl BeforeDoctypeName {
                 let token = DoctypeToken {
                     name: None,
                     force_quirks: ForceQuirksFlag::On,
-                    ..Default::default()
+                    ..DoctypeToken::default()
                 };
 
                 let mut ret = States::data().into_transition_result();
@@ -1209,7 +1209,7 @@ impl BeforeDoctypeName {
                 let token = DoctypeToken {
                     name: None,
                     force_quirks: ForceQuirksFlag::On,
-                    ..Default::default()
+                    ..DoctypeToken::default()
                 };
 
                 let mut ret = States::term().into_transition_result();

@@ -222,7 +222,7 @@ impl Doctype {
     pub fn from_char(name: char) -> Self {
         Doctype {
             name: Some(name.to_string()),
-            ..Default::default()
+            ..Doctype::default()
         }
     }
 

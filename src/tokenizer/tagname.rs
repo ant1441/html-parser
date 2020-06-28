@@ -191,7 +191,7 @@ impl TagName {
 
 impl Default for TagName {
     fn default() -> Self {
-        TagName::Other(Default::default())
+        TagName::Other(String::default())
     }
 }
 

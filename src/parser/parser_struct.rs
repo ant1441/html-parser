@@ -39,7 +39,7 @@ where
     R: Read + Seek,
 {
     pub fn new(r: R) -> Self {
-        let document: Document = Default::default();
+        let document = Document::default();
         let tokenizer = Tokenizer::new(r, false);
 
         Parser {

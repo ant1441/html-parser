@@ -56,7 +56,7 @@ impl Element {
     pub fn new_html(name: TagName) -> Rc<RefCell<Self>> {
         let elem = Element {
             name,
-            namespace: Default::default(),
+            namespace: Namespace::default(),
             children: Vec::new(),
         };
         Rc::new(RefCell::new(elem))
