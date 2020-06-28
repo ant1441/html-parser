@@ -24,6 +24,15 @@ impl ElementChildNode {
             ElementChildNode::Comment(_) => 1,
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            ElementChildNode::Element(e) => e.borrow().is_empty(),
+            ElementChildNode::Text(_) => false,
+            ElementChildNode::ProcessingInstruction(_) => false,
+            ElementChildNode::Comment(_) => false,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, From, PartialEq, Deref, DerefMut)]

@@ -30,6 +30,14 @@ impl Document {
             + self.third_children.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.first_children.is_empty()
+            && self.document_type.is_none()
+            && self.second_children.is_empty()
+            && self.element.is_none()
+            && self.third_children.is_empty()
+    }
+
     /// The document element of a document is the element whose parent is that document, if it exists, and null otherwise.
     ///
     /// ## Note

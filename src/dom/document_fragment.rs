@@ -11,4 +11,8 @@ impl DocumentFragment {
     pub fn len(&self) -> usize {
         self.children.iter().map(|c| c.len()).sum()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.children.is_empty()
+    }
 }
