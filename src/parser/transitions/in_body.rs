@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, rc::Rc};
 
 use log::{trace, warn};
 
@@ -61,7 +61,7 @@ where
             current_state.into_transition_result()
         }
         Token::Comment(comment) => {
-            let node = Comment::new(comment.clone());
+            let node = Comment::new(comment.to_owned());
             parser.document.push_comment(node);
             current_state.into_transition_result()
         }
@@ -326,13 +326,7 @@ where
             if !(current_node.namespace == Namespace::HTML && current_node.name == tag.name) {
                 parse_error("Unexpected tag")
             }
-            while let Some(e) = parser.open_elements.pop() {
-                let elem = e.borrow();
-                if elem.name == tag.name {
-                    break;
-                }
-                trace!("InBody: Popped {:?} off stack", elem);
-            }
+            parser.open_elements.pop_until(&[&tag.name]);
 
             current_state.into_transition_result()
         }
@@ -376,7 +370,7 @@ where
             }
             warn!("[TODO] InBody: 'A' - Reconstruct the active formatting elements, if any.");
             let node = Element::new_html(tag.name.clone());
-            parser.insert_html_element(node.clone());
+            parser.insert_html_element(Rc::clone(&node));
 
             parser.list_of_active_formatting_elements.push(node.into());
 
@@ -580,7 +574,7 @@ where
                 if node.borrow().is_html() && node.borrow().name() == tag_name {
                     parser.generate_implied_end_tags(Some(tag_name));
                     if !node_is_current_node {
-                        parse_error("");
+                        parse_error("</_>");
                     }
 
                     // Pop all the nodes from the current node up to node, including node, then stop these steps.
@@ -620,7 +614,7 @@ where
         && current_node.borrow().name() == subject
         && parser
             .list_of_active_formatting_elements
-            .contains(&current_node.clone().into())
+            .contains(&Rc::clone(&current_node).into())
     {
         let _ = parser.open_elements.pop();
         return;
