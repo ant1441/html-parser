@@ -262,7 +262,9 @@ where
                 TagName::H1 | TagName::H2 | TagName::H3 | TagName::H4 | TagName::H5 | TagName::H6
             ) =>
         {
-            // If the stack of open elements has a p element in button scope, then close a p element.
+            if parser.open_elements.has_a_particular_element_in_button_scope(&TagName::P) {
+                close_a_p_element(parser)
+            }
 
             let current_node = parser.current_node().unwrap();
             let is_html = current_node.borrow().is_html();
@@ -382,7 +384,13 @@ where
             todo!("InBody::on_token(EndTag('form'))");
         }
         Token::EndTag(tag) if tag.name == TagName::P => {
-            warn!("[TODO] If the stack of open elements does not have a p element in button scope, then this is a parse error; insert an HTML element for a \"p\" start tag token with no attributes.");
+            if parser.open_elements.has_a_particular_element_in_button_scope(&TagName::P) {
+                parse_error("</p>");
+
+                // insert an HTML element for a "p" start tag token with no attributes.
+                let node = Element::new_html(TagName::P);
+                parser.insert_html_element(node);
+            }
 
             close_a_p_element(parser);
 
