@@ -1,22 +1,22 @@
 use std::{cell::RefCell, rc::Rc};
 
-use derive_more::{Constructor, From};
+use derive_more::From;
 use log::warn;
 use serde::{Deserialize, Serialize};
 
 use crate::dom::{Comment, DocumentType, Element, ProcessingInstruction};
 
-#[derive(Clone, Constructor, Debug, Default, Eq, From, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, From, PartialEq)]
 pub struct Document {
-    first_children: Vec<DocumentChildNode>,
+    first_children: Vec<ChildNode>,
     document_type: Option<DocumentType>,
-    second_children: Vec<DocumentChildNode>,
+    second_children: Vec<ChildNode>,
     element: Option<Rc<RefCell<Element>>>,
-    third_children: Vec<DocumentChildNode>,
+    third_children: Vec<ChildNode>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, From, Hash, PartialEq, Serialize)]
-pub enum DocumentChildNode {
+enum ChildNode {
     ProcessingInstruction(ProcessingInstruction),
     Comment(Comment),
 }
@@ -59,6 +59,7 @@ impl Document {
     }
 
     pub(crate) fn set_mode(&mut self, mode: &str) {
+        let _ = self;
         warn!("[TODO] Document::set_mode({:?})", mode)
     }
     pub(crate) fn push_element(&mut self, elem: Rc<RefCell<Element>>) {
@@ -70,6 +71,7 @@ impl Document {
         }
     }
     pub(crate) fn push_comment(&mut self, elem: Comment) {
+        let _ = self;
         warn!("[TODO] Document::push_comment({:?})", elem)
     }
 }

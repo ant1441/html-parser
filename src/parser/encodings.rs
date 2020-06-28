@@ -53,7 +53,7 @@ fn from_file_encodings(file_encodings: FileEncodings) -> Encodings {
 // static ref GAMES: Vec<Game> = serde_json::from_str(&GAME_JSON).unwrap();
 static ENCODINGS: OnceCell<Encodings> = OnceCell::new();
 
-pub fn get_encodings() -> &'static Encodings {
+pub fn get() -> &'static Encodings {
     ENCODINGS.get_or_init(|| {
         let file_encodings = serde_json::from_str(&ENCODINGS_JSON).unwrap();
         from_file_encodings(file_encodings)
@@ -61,7 +61,7 @@ pub fn get_encodings() -> &'static Encodings {
 }
 
 pub fn get_encoding(name: &str) -> Option<&'static Encoding> {
-    let encodings = get_encodings();
+    let encodings = get();
     encodings.iter().find(|e| {
         e.labels
             .iter()

@@ -1,20 +1,20 @@
 use derive_more::From;
 
-mod comment;
-mod document;
-mod document_fragment;
-mod namespace;
-mod document_type;
-mod element;
-mod processing_instruction;
-mod text;
+pub mod comment;
+pub mod document;
+pub mod document_fragment;
+pub mod document_type;
+pub mod element;
+pub mod namespace;
+pub mod processing_instruction;
+pub mod text;
 
 pub use comment::Comment;
-pub use namespace::Namespace;
 pub use document::Document;
 pub use document_fragment::DocumentFragment;
 pub use document_type::DocumentType;
-pub use element::{Element, ElementChildNode, Category};
+pub use element::{Category, Element};
+pub use namespace::Namespace;
 pub use processing_instruction::ProcessingInstruction;
 pub use text::Text;
 

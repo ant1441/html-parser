@@ -277,7 +277,7 @@ impl States {
     pub(super) fn execute<R>(
         self,
         parser: &mut Parser<R>,
-        input: StateMachineMessages<'_>,
+        input: &StateMachineMessages<'_>,
     ) -> TransitionResult
     where
         R: io::Read + io::Seek,

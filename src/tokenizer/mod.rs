@@ -146,7 +146,7 @@ where
 
     fn next_few_characters_are(&mut self, other: &str, case_insesitive: bool) -> Result<bool> {
         let pos = self.reader.seek(SeekFrom::Current(0))?;
-        let mut buffer = vec![0u8; other.len()];
+        let mut buffer = vec![0_u8; other.len()];
         if self.reader.read_exact(&mut buffer).is_err() {
             return Ok(false);
         }
@@ -331,10 +331,10 @@ where
                 | States::RawTextEndTagName(_)
                 | States::ScriptDataEndTagName(_)
                 | States::ScriptDataEscapedEndTagName(_) => {
-                    let c = if !self.reconsume {
-                        self.next_character().unwrap()
-                    } else {
+                    let c = if self.reconsume {
                         self.last_char.unwrap()
+                    } else {
+                        self.next_character().unwrap()
                     };
                     self.last_char = Some(c);
                     state.on_character_and_last_start_tag(
@@ -343,10 +343,10 @@ where
                 }
 
                 _ => {
-                    let c = if !self.reconsume {
-                        self.next_character().unwrap()
-                    } else {
+                    let c = if self.reconsume {
                         self.last_char.unwrap()
+                    } else {
+                        self.next_character().unwrap()
                     };
                     self.last_char = Some(c);
                     state.on_character(c)

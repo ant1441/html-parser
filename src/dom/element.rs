@@ -8,31 +8,46 @@ use crate::{
 };
 
 #[derive(Clone, Debug, Eq, From, PartialEq)]
-pub enum ElementChildNode {
+pub enum ChildNode {
     Element(Rc<RefCell<Element>>),
     Text(Rc<RefCell<Text>>),
     ProcessingInstruction(Rc<RefCell<ProcessingInstruction>>),
     Comment(Rc<RefCell<Comment>>),
 }
 
-impl ElementChildNode {
+impl ChildNode {
     #[must_use]
     pub fn len(&self) -> usize {
         match self {
-            ElementChildNode::Element(e) => e.borrow().len(),
-            ElementChildNode::Text(_) => 1,
-            ElementChildNode::ProcessingInstruction(_) => 1,
-            ElementChildNode::Comment(_) => 1,
+            ChildNode::Element(e) => e.borrow().len(),
+            ChildNode::Text(_) | ChildNode::ProcessingInstruction(_) | ChildNode::Comment(_) => 1,
         }
     }
 
     #[must_use]
     pub fn is_empty(&self) -> bool {
         match self {
-            ElementChildNode::Element(e) => e.borrow().is_empty(),
-            ElementChildNode::Text(_) => false,
-            ElementChildNode::ProcessingInstruction(_) => false,
-            ElementChildNode::Comment(_) => false,
+            ChildNode::Element(e) => e.borrow().is_empty(),
+            ChildNode::Text(_) | ChildNode::ProcessingInstruction(_) | ChildNode::Comment(_) => {
+                false
+            }
+        }
+    }
+
+    #[must_use]
+    pub fn is_text(&self) -> bool {
+        match self {
+            ChildNode::Text(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn push_str(&mut self, string: &str) {
+        match self {
+            ChildNode::Text(t) => t.borrow_mut().push_str(string),
+            ChildNode::Element(_) | ChildNode::ProcessingInstruction(_) | ChildNode::Comment(_) => {
+                todo!("element::ChildNode::push_str")
+            }
         }
     }
 }
@@ -43,7 +58,7 @@ pub struct Element {
     pub namespace: Namespace,
     #[deref]
     #[deref_mut]
-    children: Vec<ElementChildNode>,
+    children: Vec<ChildNode>,
 }
 
 impl Element {
@@ -72,8 +87,9 @@ impl Element {
         self.namespace == Namespace::HTML
     }
 
-    /// https://html.spec.whatwg.org/multipage/parsing.html#mathml-text-integration-point
+    /// <https://html.spec.whatwg.org/multipage/parsing.html#mathml-text-integration-point>
     #[must_use]
+    #[allow(clippy::match_same_arms)]
     pub fn is_mathml_text_integration_point(&self) -> bool {
         match (self.namespace, self.name()) {
             (Namespace::MathML, TagName::Mi) => true,
@@ -85,8 +101,9 @@ impl Element {
         }
     }
 
-    /// https://html.spec.whatwg.org/multipage/parsing.html#html-integration-point
+    /// <https://html.spec.whatwg.org/multipage/parsing.html#html-integration-point>
     #[must_use]
+    #[allow(clippy::match_same_arms)]
     pub fn is_html_integration_point(&self) -> bool {
         match (self.namespace, self.name()) {
             (Namespace::MathML, TagName::AnnotationXml) => todo!(),

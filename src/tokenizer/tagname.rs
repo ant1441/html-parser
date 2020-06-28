@@ -1,3 +1,5 @@
+#![allow(clippy::match_same_arms)]
+
 use log::warn;
 use serde::{Deserialize, Serialize};
 

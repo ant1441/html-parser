@@ -77,10 +77,10 @@ where
             let res = match insertion_mode {
                 States::Term(_) => return,
                 _ => {
-                    let token = if !self.reprocess {
-                        self.tokenizer.next().unwrap()
-                    } else {
+                    let token = if self.reprocess {
                         self.last_token.take().unwrap()
+                    } else {
+                        self.tokenizer.next().unwrap()
                     };
 
                     // tree construction dispatcher
@@ -122,9 +122,9 @@ where
 
     pub(super) fn insert_character<C: AsRef<str>>(&mut self, data: C) {
         let (target, pos) = self.appropriate_place_for_inserting_a_node(None).unwrap();
-        let mut target = target.borrow_mut();
+        let mut target = RefCell::borrow_mut(&target);
         if pos > 0 {
-            if let Some(dom::ElementChildNode::Text(text)) = target.get_mut(pos - 1) {
+            if let Some(dom::element::ChildNode::Text(text)) = target.get_mut(pos - 1) {
                 trace!(target: "html_parser::parser", "Appending char at position {}", pos - 1);
                 let mut text = text.borrow_mut();
                 return text.push_str(data.as_ref());
