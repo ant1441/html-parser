@@ -196,7 +196,7 @@ impl error::Error for ParseError {
 }
 
 impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use ParseError::*;
         match self {
             AbruptClosingOfEmptyComment => write!(f, "AbruptClosingOfEmptyComment"),

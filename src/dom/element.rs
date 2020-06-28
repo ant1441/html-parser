@@ -2,8 +2,10 @@ use std::{cell::RefCell, rc::Rc};
 
 use derive_more::{Deref, DerefMut, From};
 
-use super::{Comment, ProcessingInstruction, Text};
-use crate::{dom::Namespace, tokenizer::TagName};
+use crate::{
+    dom::{Comment, Namespace, ProcessingInstruction, Text},
+    tokenizer::TagName,
+};
 
 #[derive(Clone, Debug, Eq, From, PartialEq)]
 pub enum ElementChildNode {

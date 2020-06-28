@@ -1,11 +1,10 @@
-use crate::{
-    dom,
-    parser::{states::*, Parser, TransitionResult},
-    tokenizer::{TagName, Token},
-};
 use std::io;
 
-use super::parse_error;
+use crate::{
+    dom,
+    parser::{states::*, Parser, TransitionResult, parse_error},
+    tokenizer::{TagName, Token},
+};
 
 impl BeforeHead {
     pub(in crate::parser) fn on_token<R>(

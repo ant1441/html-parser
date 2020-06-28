@@ -1,8 +1,8 @@
 use std::fmt;
 
-use crate::tokenizer::TagName;
-
 use derive_more::From;
+
+use crate::tokenizer::TagName;
 
 #[derive(Clone, Debug, PartialEq, Eq, From)]
 pub enum Token {

@@ -1,4 +1,4 @@
-use super::{errors::{Error, Result}, States};
+use crate::parser::{errors::{Error, Result}, States};
 
 #[derive(Debug)]
 pub(super) struct TransitionResult {

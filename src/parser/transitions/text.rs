@@ -1,9 +1,9 @@
+use std::io;
+
 use crate::{
     parser::{states::*, Parser, TransitionResult},
     tokenizer::{TagName, Token},
 };
-use std::io;
-
 
 impl Text {
     pub(in crate::parser) fn on_token<R>(

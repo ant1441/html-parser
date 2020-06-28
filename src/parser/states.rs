@@ -2,9 +2,10 @@ use std::io;
 
 use derive_more::{Display, From};
 
-use crate::{parser::Parser, tokenizer::Token};
-
-use super::{errors, TransitionResult};
+use crate::{
+    parser::{errors, Parser, TransitionResult},
+    tokenizer::Token,
+};
 
 macro_rules! create_states {
     ($($s:ident,)+) => {
@@ -18,7 +19,7 @@ macro_rules! create_states {
 
         $(
             impl ::std::fmt::Display for $s {
-                fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                     write!(f, stringify!($s))
                 }
             }
@@ -168,7 +169,9 @@ impl States {
     }
 
     pub(super) fn text(original_insertion_mode: Box<States>) -> Self {
-        States::Text(Text { original_insertion_mode })
+        States::Text(Text {
+            original_insertion_mode,
+        })
     }
 
     pub(super) fn in_table() -> Self {
@@ -237,11 +240,7 @@ impl States {
 
     // Transitions
 
-    pub(super) fn on_token<R>(
-        self,
-        parser: &mut Parser<R>,
-        input: &Token,
-    ) -> TransitionResult
+    pub(super) fn on_token<R>(self, parser: &mut Parser<R>, input: &Token) -> TransitionResult
     where
         R: io::Read + io::Seek,
     {
@@ -278,7 +277,7 @@ impl States {
     pub(super) fn execute<R>(
         self,
         parser: &mut Parser<R>,
-        input: StateMachineMessages,
+        input: StateMachineMessages<'_>,
     ) -> TransitionResult
     where
         R: io::Read + io::Seek,

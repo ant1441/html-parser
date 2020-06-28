@@ -1,6 +1,6 @@
 use derive_more::{Constructor, From};
 
-use super::Node;
+use crate::dom::Node;
 
 #[derive(Clone, Constructor, Debug, Default, Eq, From, PartialEq)]
 pub struct DocumentFragment {

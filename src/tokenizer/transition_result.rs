@@ -5,7 +5,7 @@ use std::cell::Cell;
 
 use log::warn;
 
-use super::{
+use crate::tokenizer::{
     errors::{Error, ParseError, Result},
     Emit, States, Token,
 };

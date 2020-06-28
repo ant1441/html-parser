@@ -3,7 +3,7 @@ use std::{error, fmt};
 use auto_enums::enum_derive;
 use derive_more::From;
 
-use super::States;
+use crate::parser::States;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -28,7 +28,7 @@ impl error::Error for StateTransitionError {
 }
 
 impl fmt::Display for StateTransitionError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "StateTransitionError: '{}' does not support transition '{}'",

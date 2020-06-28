@@ -4,7 +4,7 @@ use derive_more::{Constructor, From};
 use log::warn;
 use serde::{Deserialize, Serialize};
 
-use super::{Comment, DocumentType, Element, ProcessingInstruction};
+use crate::dom::{Comment, DocumentType, Element, ProcessingInstruction};
 
 #[derive(Clone, Constructor, Debug, Default, Eq, From, PartialEq)]
 pub struct Document {

@@ -1,11 +1,11 @@
 use log::trace;
 
-use super::{
+use crate::tokenizer::{
     codepoint,
     errors::ParseError,
     get_entities,
     states::*,
-    token::{self, EndTag, StartTag, Token},
+    token::{Doctype as DoctypeToken, EndTag, ForceQuirksFlag, SelfClosingFlag, StartTag, Token},
     TransitionResult,
 };
 
@@ -322,7 +322,10 @@ impl RcDataEndTagOpen {
 }
 
 impl RcDataEndTagName {
-    pub(super) fn on_character_and_last_start_tag(mut self, c: CharacterAndLastStartTag) -> TransitionResult {
+    pub(super) fn on_character_and_last_start_tag(
+        mut self,
+        c: CharacterAndLastStartTag,
+    ) -> TransitionResult {
         let (c, last_start_tag_emitted) = c.into();
         match c {
             Character::Char(U_CHARACTER_TABULATION)
@@ -333,10 +336,14 @@ impl RcDataEndTagName {
             {
                 States::before_attribute_name(self.token).into_transition_result()
             }
-            Character::Char(U_SOLIDUS) if self.is_appropriate_end_tag_token(&last_start_tag_emitted) => {
+            Character::Char(U_SOLIDUS)
+                if self.is_appropriate_end_tag_token(&last_start_tag_emitted) =>
+            {
                 States::self_closing_start_tag(self.token).into_transition_result()
             }
-            Character::Char(U_GREATER_THAN_SIGN) if self.is_appropriate_end_tag_token(&last_start_tag_emitted) => {
+            Character::Char(U_GREATER_THAN_SIGN)
+                if self.is_appropriate_end_tag_token(&last_start_tag_emitted) =>
+            {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -415,7 +422,8 @@ impl RawTextEndTagOpen {
             Character::Char(a) if a.is_alphabetic() => {
                 let token: EndTag = Default::default();
 
-                let mut ret = States::raw_text_end_tag_name(token, self.tmp).into_transition_result();
+                let mut ret =
+                    States::raw_text_end_tag_name(token, self.tmp).into_transition_result();
                 ret.set_reconsume();
                 ret
             }
@@ -431,7 +439,10 @@ impl RawTextEndTagOpen {
 }
 
 impl RawTextEndTagName {
-    pub(super) fn on_character_and_last_start_tag(mut self, c: CharacterAndLastStartTag) -> TransitionResult {
+    pub(super) fn on_character_and_last_start_tag(
+        mut self,
+        c: CharacterAndLastStartTag,
+    ) -> TransitionResult {
         let (c, last_start_tag_emitted) = c.into();
         match c {
             Character::Char(U_CHARACTER_TABULATION)
@@ -442,10 +453,14 @@ impl RawTextEndTagName {
             {
                 States::before_attribute_name(self.token).into_transition_result()
             }
-            Character::Char(U_SOLIDUS) if self.is_appropriate_end_tag_token(&last_start_tag_emitted) => {
+            Character::Char(U_SOLIDUS)
+                if self.is_appropriate_end_tag_token(&last_start_tag_emitted) =>
+            {
                 States::self_closing_start_tag(self.token).into_transition_result()
             }
-            Character::Char(U_GREATER_THAN_SIGN) if self.is_appropriate_end_tag_token(&last_start_tag_emitted) => {
+            Character::Char(U_GREATER_THAN_SIGN)
+                if self.is_appropriate_end_tag_token(&last_start_tag_emitted) =>
+            {
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
                 ret
@@ -862,7 +877,7 @@ impl SelfClosingStartTag {
     pub(super) fn on_character(mut self, c: Character) -> TransitionResult {
         match c {
             Character::Char(U_GREATER_THAN_SIGN) => {
-                self.token.set_self_closing(token::SelfClosingFlag::Set);
+                self.token.set_self_closing(SelfClosingFlag::Set);
 
                 let mut ret = States::data().into_transition_result();
                 ret.push_emit(self.token);
@@ -1138,9 +1153,9 @@ impl Doctype {
                 ret
             }
             Character::Eof => {
-                let token = token::Doctype {
+                let token = DoctypeToken {
                     name: None,
-                    force_quirks: token::ForceQuirksFlag::On,
+                    force_quirks: ForceQuirksFlag::On,
                     ..Default::default()
                 };
 
@@ -1168,20 +1183,20 @@ impl BeforeDoctypeName {
             | Character::Char(U_FORM_FEED)
             | Character::Char(U_SPACE) => States::from(self).into_transition_result(),
             Character::Char(c) if c.is_ascii_uppercase() => {
-                let token = token::Doctype::from_char(c.to_lowercase().next().unwrap());
+                let token = DoctypeToken::from_char(c.to_lowercase().next().unwrap());
                 States::doctype_name(token).into_transition_result()
             }
             Character::Char(U_NULL) => {
-                let token = token::Doctype::from_char(U_REPLACEMENT_CHARACTER);
+                let token = DoctypeToken::from_char(U_REPLACEMENT_CHARACTER);
 
                 let mut ret = States::doctype_name(token).into_transition_result();
                 ret.push_parse_error(ParseError::UnexpectedNullCharacter);
                 ret
             }
             Character::Char(U_GREATER_THAN_SIGN) => {
-                let token = token::Doctype {
+                let token = DoctypeToken {
                     name: None,
-                    force_quirks: token::ForceQuirksFlag::On,
+                    force_quirks: ForceQuirksFlag::On,
                     ..Default::default()
                 };
 
@@ -1191,9 +1206,9 @@ impl BeforeDoctypeName {
                 ret
             }
             Character::Eof => {
-                let token = token::Doctype {
+                let token = DoctypeToken {
                     name: None,
-                    force_quirks: token::ForceQuirksFlag::On,
+                    force_quirks: ForceQuirksFlag::On,
                     ..Default::default()
                 };
 
@@ -1204,7 +1219,7 @@ impl BeforeDoctypeName {
                 ret
             }
             Character::Char(c) => {
-                let token = token::Doctype::from_char(c);
+                let token = DoctypeToken::from_char(c);
                 States::doctype_name(token).into_transition_result()
             }
         }
@@ -1236,7 +1251,7 @@ impl DoctypeName {
                 ret
             }
             Character::Eof => {
-                self.token.set_force_quirks(token::ForceQuirksFlag::On);
+                self.token.set_force_quirks(ForceQuirksFlag::On);
 
                 let mut ret = States::term().into_transition_result();
                 ret.push_parse_error(ParseError::EofInDoctype);

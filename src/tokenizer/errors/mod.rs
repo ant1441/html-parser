@@ -1,14 +1,15 @@
-use std::{error, fmt};
+use std::{error, fmt, result};
 
 use auto_enums::enum_derive;
 use derive_more::From;
 
+use crate::tokenizer::States;
+
 mod parse_error;
 
-use super::States;
 pub use parse_error::ParseError;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = result::Result<T, Error>;
 
 #[enum_derive(Error, From)]
 pub enum Error {
@@ -37,7 +38,7 @@ impl error::Error for StateTransitionError {
 }
 
 impl fmt::Display for StateTransitionError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "StateTransitionError: '{}' does not support transition '{}'",

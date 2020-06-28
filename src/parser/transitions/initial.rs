@@ -1,11 +1,10 @@
-use crate::{
-    dom,
-    parser::{states::*, Parser, TransitionResult},
-    tokenizer::Token,
-};
 use std::io;
 
-use super::parse_error;
+use crate::{
+    dom,
+    parser::{parse_error, states::*, Parser, TransitionResult, transitions::force_quirks_check},
+    tokenizer::Token,
+};
 
 impl Initial {
     pub(in crate::parser) fn on_token<R>(
@@ -65,7 +64,7 @@ where
             // and the other attributes specific to DocumentType objects set to null and empty lists as appropriate.
             // Associate the DocumentType node with the Document object so that it is returned as the value of the doctype attribute of the Document object.
 
-            if super::force_quirks_check::quirks_check(
+            if force_quirks_check::quirks_check(
                 &name,
                 &public_id,
                 &system_id,
@@ -73,7 +72,7 @@ where
                 system_id_present,
             ) {
                 parser.document.set_mode("quirks");
-            } else if super::force_quirks_check::limited_quirks_check(&public_id, system_id_present)
+            } else if force_quirks_check::limited_quirks_check(&public_id, system_id_present)
             {
                 parser.document.set_mode("limited-quirks");
             }

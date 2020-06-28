@@ -1,5 +1,3 @@
-use log::error;
-
 mod force_quirks_check;
 
 /*
@@ -16,10 +14,3 @@ pub(super) mod in_head;
 pub(super) mod initial;
 pub(super) mod text;
 
-/*
- * Transition Helpers
- */
-
-fn parse_error(msg: &str) {
-    error!("Parse Error: {}", msg);
-}

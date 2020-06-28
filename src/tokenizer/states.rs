@@ -1,8 +1,8 @@
 use derive_more::{AsRef, Deref, DerefMut, Display, From, Into};
 
-use super::{
+use crate::tokenizer::{
     errors,
-    token::{self, Token},
+    token::{StartTag, Token},
     Codepoint, TransitionResult,
 };
 
@@ -18,7 +18,7 @@ macro_rules! create_states {
 
         $(
             impl ::std::fmt::Display for $s {
-                fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                     write!(f, stringify!($s))
                 }
             }
@@ -1076,7 +1076,7 @@ pub(super) enum Character {
 }
 
 #[derive(Clone, Debug, PartialEq, From, Into)]
-pub(super) struct CharacterAndLastStartTag(Character, Option<token::StartTag>);
+pub(super) struct CharacterAndLastStartTag(Character, Option<StartTag>);
 
 // Is this just needed for MarkupDeclarationOpen?
 #[derive(Clone, Debug, PartialEq, From, Into, AsRef, Deref, DerefMut)]

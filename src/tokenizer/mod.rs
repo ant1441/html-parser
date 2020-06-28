@@ -5,7 +5,6 @@ use std::{
     str,
 };
 
-// use derive_more::{AsRef, From};
 use log::{debug, trace};
 
 mod codepoint;
@@ -17,14 +16,16 @@ mod token;
 mod transition_result;
 mod transitions;
 
-use self::states::{Character, NamedCharacterReference, States};
+use self::{
+    codepoint::Codepoint,
+    errors::Result,
+    named_character_references::get_entities,
+    states::{Character, NamedCharacterReference, States},
+};
+
 pub(crate) use tagname::TagName;
 pub(crate) use token::Token;
-pub(self) use transition_result::TransitionResult;
-
-use codepoint::Codepoint;
-use errors::Result;
-use named_character_references::get_entities;
+pub(crate) use transition_result::TransitionResult;
 
 type Emit = Vec<Token>;
 

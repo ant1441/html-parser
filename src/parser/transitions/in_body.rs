@@ -1,13 +1,13 @@
+use std::io;
+
 use log::{trace, warn};
 
 use crate::{
-    dom::{self, Namespace},
-    parser::{self, states::*, FramesetOkFlag, Parser, TransitionResult},
+    dom::{Namespace, Comment, Element, Category},
+    parser::{parse_error, states::*, FramesetOkFlag, Parser, TransitionResult, ScriptingFlag},
     tokenizer::{TagName, Token},
 };
-use std::io;
 
-use super::parse_error;
 
 impl InBody {
     pub(in crate::parser) fn on_token<R>(
@@ -46,19 +46,19 @@ where
         Token::Characters(ch) => {
             warn!("[TODO] InBody: _  - Reconstruct the active formatting elements, if any.");
             parser.insert_character(ch.to_string());
-            parser.frameset_ok = parser::FramesetOkFlag::NotOk;
+            parser.frameset_ok = FramesetOkFlag::NotOk;
 
             current_state.into_transition_result()
         }
         Token::Character(ch) => {
             warn!("[TODO] InBody: _  - Reconstruct the active formatting elements, if any.");
             parser.insert_character(ch.to_string());
-            parser.frameset_ok = parser::FramesetOkFlag::NotOk;
+            parser.frameset_ok = FramesetOkFlag::NotOk;
 
             current_state.into_transition_result()
         }
         Token::Comment(comment) => {
-            let node = dom::Comment::new(comment.clone());
+            let node = Comment::new(comment.clone());
             parser.document.push_comment(node);
             current_state.into_transition_result()
         }
@@ -242,7 +242,7 @@ where
                 todo!("InBody::on_token('address|...') - close a p element");
             }
 
-            let node = dom::Element::new_html(tag.name.clone());
+            let node = Element::new_html(tag.name.clone());
             parser.insert_html_element(node);
 
             current_state.into_transition_result()
@@ -365,7 +365,7 @@ where
                 todo!("InBody::on_token('a')");
             }
             warn!("[TODO] InBody: 'A' - Reconstruct the active formatting elements, if any.");
-            let node = dom::Element::new_html(tag.name.clone());
+            let node = Element::new_html(tag.name.clone());
             parser.insert_html_element(node.clone());
 
             parser.list_of_active_formatting_elements.push(node.into());
@@ -444,7 +444,7 @@ where
         Token::StartTag(tag) if tag.name == TagName::Input => {
             warn!("[TODO] InBody: 'input' - Reconstruct the active formatting elements, if any.");
 
-            let node = dom::Element::new_html(tag.name.clone());
+            let node = Element::new_html(tag.name.clone());
             parser.insert_html_element(node);
 
             if tag.is_self_closing() {
@@ -498,7 +498,7 @@ where
         }
         Token::StartTag(tag)
             if tag.name == TagName::Noscript
-                && parser.scripting == parser::ScriptingFlag::Enabled =>
+                && parser.scripting == ScriptingFlag::Enabled =>
         {
             todo!("InBody::on_token('noscript')");
         }
@@ -538,7 +538,7 @@ where
         Token::StartTag(tag) => {
             warn!("[TODO] InBody: '_' - Reconstruct the active formatting elements, if any.");
 
-            let node = dom::Element::new_html(tag.name.clone());
+            let node = Element::new_html(tag.name.clone());
             parser.insert_html_element(node);
 
             current_state.into_transition_result()
@@ -574,7 +574,7 @@ where
                     }
 
                     break;
-                } else if node.borrow().category() == dom::Category::Special {
+                } else if node.borrow().category() == Category::Special {
                     parse_error("Special Node found in body");
                     return current_state.into_transition_result();
                 }

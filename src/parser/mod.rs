@@ -1,3 +1,5 @@
+use log::error;
+
 mod errors;
 mod list_of_active_formatting_elements;
 mod open_elements_stack;
@@ -7,8 +9,8 @@ mod transition_result;
 mod transitions;
 pub mod encodings;
 
-pub(self) use list_of_active_formatting_elements::ListOfActiveFormattingElements;
-pub(self) use open_elements_stack::OpenElementsStack;
+use list_of_active_formatting_elements::ListOfActiveFormattingElements;
+use open_elements_stack::OpenElementsStack;
 pub use parser_struct::Parser;
 use states::States;
 use transition_result::TransitionResult;
@@ -23,4 +25,9 @@ pub enum ScriptingFlag {
 pub enum FramesetOkFlag {
     Ok,
     NotOk,
+}
+
+// TODO How to report parser errors?
+fn parse_error(msg: &str) {
+    error!("Parse Error: {}", msg);
 }

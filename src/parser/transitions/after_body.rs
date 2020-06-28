@@ -3,7 +3,7 @@ use std::io;
 use log::warn;
 
 use crate::{
-    parser::{states::*, transitions, Parser, TransitionResult, transitions::parse_error},
+    parser::{states::*, transitions, Parser, TransitionResult, parse_error},
     tokenizer::{TagName, Token},
 };
 
