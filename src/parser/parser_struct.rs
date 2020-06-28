@@ -287,3 +287,26 @@ where
         self.open_elements.last().map(|e| Rc::clone(e))
     }
 }
+
+impl<R> fmt::Debug for Parser<R>
+where
+    R: Read + Seek + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Parser")
+            .field("document", &self.document)
+            .field("tokenizer", &self.tokenizer)
+            .field("insertion_mode", &self.insertion_mode)
+            .field("reprocess", &self.reprocess)
+            .field("last_token", &self.last_token)
+            .field("open_elements", &self.open_elements)
+            .field(
+                "list_of_active_formatting_elements",
+                &self.list_of_active_formatting_elements,
+            )
+            .field("head_element_pointer", &self.head_element_pointer)
+            .field("scripting", &self.scripting)
+            .field("frameset_ok", &self.frameset_ok)
+            .finish()
+    }
+}

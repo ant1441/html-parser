@@ -358,6 +358,23 @@ where
     }
 }
 
+impl<R> fmt::Debug for Tokenizer<R>
+where
+    R: Read + Seek + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Tokenizer")
+            .field("reader", &self.reader)
+            .field("collapse_chars", &self.collapse_chars)
+            .field("state", &self.state)
+            .field("reconsume", &self.reconsume)
+            .field("last_char", &self.last_char)
+            .field("last_start_tag_emitted", &self.last_start_tag_emitted)
+            .field("token_emit_cache", &self.token_emit_cache)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
