@@ -248,7 +248,7 @@ where
             ) =>
         {
             if parser.open_elements.contains_element(&TagName::P) {
-                todo!("InBody::on_token('address|...') - close a p element");
+                close_a_p_element(parser)
             }
 
             let node = Element::new_html(tag.name.clone());
@@ -314,7 +314,9 @@ where
                 }
             }
 
-            // If the stack of open elements has a p element in button scope, then close a p element.
+            if parser.open_elements.has_a_particular_element_in_button_scope(&TagName::P) {
+                close_a_p_element(parser)
+            }
 
             let node = Element::new_html(tag.name.clone());
             parser.insert_html_element(Rc::clone(&node));
