@@ -30,7 +30,7 @@ where
     E: Into<Error>,
 {
     fn from(res: ::std::result::Result<States, E>) -> Self {
-        TransitionResult::from_result(res.map_err(|e| e.into()))
+        TransitionResult::from_result(res.map_err(Into::into))
     }
 }
 

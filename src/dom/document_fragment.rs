@@ -10,7 +10,7 @@ pub struct DocumentFragment {
 impl DocumentFragment {
     #[must_use]
     pub fn len(&self) -> usize {
-        self.children.iter().map(|c| c.len()).sum()
+        self.children.iter().map(Node::len).sum()
     }
 
     #[must_use]
