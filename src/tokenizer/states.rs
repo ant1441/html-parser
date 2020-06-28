@@ -451,7 +451,6 @@ pub(super) struct Term {}
 
 pub(crate) type CharacterReferenceCode = Codepoint;
 
-#[allow(dead_code)]
 impl States {
     pub(super) fn new() -> Self {
         States::data()

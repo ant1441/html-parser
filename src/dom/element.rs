@@ -1,7 +1,6 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
-use derive_more::{From, Deref, DerefMut};
+use derive_more::{Deref, DerefMut, From};
 
 use super::{Comment, ProcessingInstruction, Text};
 use crate::{dom::Namespace, tokenizer::TagName};
@@ -79,7 +78,6 @@ impl Element {
         }
     }
 
-    #[allow(dead_code)]
     pub fn category(&self) -> Category {
         if self.namespace == Namespace::HTML {
             match self.name {

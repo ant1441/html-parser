@@ -57,7 +57,6 @@ impl TransitionResult {
         self.state.is_err()
     }
 
-    #[allow(dead_code)]
     pub(super) fn is_ok(&self) -> bool {
         self.state.is_ok()
     }
@@ -81,9 +80,10 @@ impl TransitionResult {
     pub(super) fn push_emit<T: Into<Token>>(&mut self, token: T) {
         let mut token = token.into();
         token.emitting();
-        let mut emits = self.emit.take();
+
+        let mut emits = Cell::take(&self.emit);
         emits.push(token);
-        self.emit.replace(emits);
+        Cell::set(&self.emit, emits);
     }
 
     pub(super) fn push_parse_error(&mut self, err: ParseError) {

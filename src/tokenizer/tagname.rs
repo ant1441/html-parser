@@ -360,7 +360,7 @@ impl std::str::FromStr for TagName {
     }
 }
 
-impl std::cmp::PartialEq for TagName {
+impl PartialEq for TagName {
     fn eq(&self, other: &Self) -> bool {
         use TagName::*;
 

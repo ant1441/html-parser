@@ -134,7 +134,6 @@ pub(super) struct AfterAfterFrameset {}
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct Term {}
 
-#[allow(dead_code)]
 impl States {
     pub(super) fn new() -> Self {
         States::initial()
@@ -240,7 +239,7 @@ impl States {
 
     pub(super) fn on_token<R>(
         self,
-        parser: &mut crate::parser::Parser<R>,
+        parser: &mut Parser<R>,
         input: &Token,
     ) -> TransitionResult
     where

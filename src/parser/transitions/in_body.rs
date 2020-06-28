@@ -22,6 +22,7 @@ impl InBody {
     }
 }
 
+#[allow(clippy::cognitive_complexity)]
 pub(super) fn transition<R>(
     current_state: States,
     parser: &mut Parser<R>,
@@ -472,14 +473,16 @@ where
             todo!("InBody::on_token('hr')");
         }
         Token::StartTag(tag) if tag.name == TagName::Other("image".to_string()) => {
-            todo!("InBody::on_token('image')");
-
+            /*
             // Don't ask, apparently
             tag.name = TagName::Img;
 
             let mut ret = current_state.into_transition_result();
             ret.set_reprocess();
             ret
+            */
+
+            todo!("InBody::on_token('image')");
         }
         Token::StartTag(tag) if tag.name == TagName::Textarea => {
             todo!("InBody::on_token('textarea')");
@@ -598,7 +601,7 @@ where
             .list_of_active_formatting_elements
             .contains(&current_node.clone().into())
     {
-        parser.open_elements.pop();
+        let _ = parser.open_elements.pop();
         return;
     }
 
@@ -621,6 +624,6 @@ where
             Some(e) => e,
         };
 
-        todo!("adoption_agency_algorithm for {:?}", token)
+        todo!("adoption_agency_algorithm for {:?} {}", token, outer_loop_counter)
     }
 }

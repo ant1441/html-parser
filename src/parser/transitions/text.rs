@@ -1,13 +1,9 @@
-use log::{trace, warn};
-
 use crate::{
-    dom::{self, Namespace},
-    parser::{self, states::*, FramesetOkFlag, Parser, TransitionResult},
+    parser::{states::*, Parser, TransitionResult},
     tokenizer::{TagName, Token},
 };
 use std::io;
 
-use super::parse_error;
 
 impl Text {
     pub(in crate::parser) fn on_token<R>(
@@ -28,7 +24,7 @@ impl Text {
             todo!("Text::on_token(</script>)")
         }
         Token::EndTag(_) => {
-            parser.open_elements.pop();
+            let _ = parser.open_elements.pop();
             self.original_insertion_mode.into_transition_result()
         }
         _ => unreachable!("Parser - Text State"),

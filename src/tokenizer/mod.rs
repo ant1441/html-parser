@@ -1,6 +1,7 @@
-use std::io::{self, prelude::*, BufReader, SeekFrom};
 use std::{
     cell::{Cell, RefCell},
+    fmt,
+    io::{prelude::*, BufReader, SeekFrom},
     str,
 };
 
@@ -29,7 +30,7 @@ type Emit = Vec<Token>;
 
 pub struct Tokenizer<R>
 where
-    R: io::Read + io::Seek,
+    R: Read + Seek,
 {
     reader: BufReader<R>,
     collapse_chars: bool,
@@ -46,7 +47,7 @@ where
 
 impl<R> Tokenizer<R>
 where
-    R: io::Read + io::Seek,
+    R: Read + Seek,
 {
     pub fn new(reader: R, collapse_chars: bool) -> Self {
         Tokenizer {
@@ -89,10 +90,10 @@ where
     }
 
     fn peek_next_character(&mut self) -> Result<Character> {
-        let pos = self.reader.seek(SeekFrom::Current(0)).unwrap();
+        let pos = self.reader.seek(SeekFrom::Current(0))?;
         let ret = self.next_character()?;
         trace!("Peeked char: {:?}", ret);
-        self.reader.seek(SeekFrom::Start(pos)).unwrap();
+        let _ = self.reader.seek(SeekFrom::Start(pos))?;
         Ok(ret)
     }
 
@@ -118,10 +119,10 @@ where
                 // U+000D CR U+000A LF (\r\n) code point pair with a single
                 // U+000A LF (\n) code point, and then replace every remaining
                 // U+000D CR (\r) code point with a U+000A LF (\n) code point.
-                Ok("\r") => match self.peek_next_character().unwrap() {
+                Ok("\r") => match self.peek_next_character()? {
                     Character::Char('\n') => {
                         // Remove the '\r' from potential_char, the '\n' found next will be handled
-                        potential_char.pop();
+                        let _ = potential_char.pop();
                         continue;
                     }
                     _ => {
@@ -187,7 +188,7 @@ where
         tmp.push(original_char);
 
         let mut found_ident = None;
-        let mut last_valid_reader_pos = self.reader.seek(SeekFrom::Current(0)).unwrap();
+        let mut last_valid_reader_pos = self.reader.seek(SeekFrom::Current(0))?;
 
         loop {
             trace!("Checking {:?} against idents", tmp);
@@ -196,7 +197,7 @@ where
             if let Some(&&ident) = identifiers.iter().find(|&&ident| ident.starts_with(&r_tmp)) {
                 if ident == tmp {
                     found_ident = Some(ident.to_string());
-                    last_valid_reader_pos = self.reader.seek(SeekFrom::Current(0)).unwrap();
+                    last_valid_reader_pos = self.reader.seek(SeekFrom::Current(0))?;
                     trace!(
                         "Exact character reference match found at pos: {:?}",
                         last_valid_reader_pos
@@ -216,10 +217,8 @@ where
                 // If we ever found anything, we should seek back 1 char
                 if found_ident.is_some() {
                     // Remove the excess char we read in (remember, not only a single byte!)
-                    tmp.pop();
-                    self.reader
-                        .seek(SeekFrom::Start(last_valid_reader_pos))
-                        .unwrap();
+                    let _ = tmp.pop();
+                    let _ = self.reader.seek(SeekFrom::Start(last_valid_reader_pos))?;
                 }
                 break;
             }
@@ -228,7 +227,7 @@ where
         Ok(found_ident)
     }
 
-    fn handle_transition_result(&mut self, mut res: TransitionResult) -> Option<token::Token> {
+    fn handle_transition_result(&mut self, mut res: TransitionResult) -> Option<Token> {
         for token in res.emits() {
             if self.collapse_chars {
                 if !token.is_character() {
@@ -275,11 +274,11 @@ where
     }
 }
 
-impl<R> std::iter::Iterator for Tokenizer<R>
+impl<R> Iterator for Tokenizer<R>
 where
-    R: io::Read + io::Seek,
+    R: Read + Seek,
 {
-    type Item = token::Token;
+    type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -337,7 +336,9 @@ where
                         self.last_char.unwrap()
                     };
                     self.last_char = Some(c);
-                    state.on_character_and_last_start_tag((c, self.last_start_tag_emitted.clone()).into())
+                    state.on_character_and_last_start_tag(
+                        (c, self.last_start_tag_emitted.clone()).into(),
+                    )
                 }
 
                 _ => {

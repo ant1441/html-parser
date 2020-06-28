@@ -375,7 +375,7 @@ impl RcDataEndTagName {
     // tokenizer, if any.
     // If no start tag has been emitted from this tokenizer, then no end tag
     // token is appropriate.
-    fn is_appropriate_end_tag_token(&self, last_start_tag_emitted: &Option<token::StartTag>) -> bool {
+    fn is_appropriate_end_tag_token(&self, last_start_tag_emitted: &Option<StartTag>) -> bool {
         if let Token::EndTag(ref token) = self.token {
             if let Some(tag) = last_start_tag_emitted {
                 if tag.name == token.name {
@@ -484,7 +484,7 @@ impl RawTextEndTagName {
     // tokenizer, if any.
     // If no start tag has been emitted from this tokenizer, then no end tag
     // token is appropriate.
-    fn is_appropriate_end_tag_token(&self, last_start_tag_emitted: &Option<token::StartTag>) -> bool {
+    fn is_appropriate_end_tag_token(&self, last_start_tag_emitted: &Option<StartTag>) -> bool {
         if let Token::EndTag(ref token) = self.token {
             if let Some(tag) = last_start_tag_emitted {
                 if tag.name == token.name {

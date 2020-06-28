@@ -1,7 +1,4 @@
-#![allow(dead_code)]
-
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use derive_more::{Constructor, From};
 use log::warn;
@@ -62,7 +59,7 @@ impl Document {
         }
     }
     pub(crate) fn push_comment(&mut self, elem: Comment) {
-            warn!("[TODO] Document::push_comment({:?})", elem)
+        warn!("[TODO] Document::push_comment({:?})", elem)
     }
 }
 

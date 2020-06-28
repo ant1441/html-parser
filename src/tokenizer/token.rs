@@ -1,7 +1,6 @@
-#![allow(dead_code)]
-
-use super::TagName;
 use std::fmt;
+
+use crate::tokenizer::TagName;
 
 use derive_more::From;
 
@@ -48,7 +47,7 @@ pub struct EndTag {
     pub attributes: Vec<Attribute>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum SelfClosingFlag {
     Set,
     Unset,
@@ -60,7 +59,7 @@ impl Default for SelfClosingFlag {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ForceQuirksFlag {
     Off,
     On,

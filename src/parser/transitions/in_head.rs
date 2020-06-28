@@ -56,7 +56,7 @@ where
             Token::StartTag(tag) if tag.name == TagName::Meta => {
                 let node = dom::Element::new_html(tag.name.clone());
                 parser.insert_html_element(node);
-                parser.open_elements.pop();
+                let _ = parser.open_elements.pop();
 
                 if tag.is_self_closing() {
                     todo!("InHead:on_token(Self closing 'meta')");

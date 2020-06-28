@@ -1,8 +1,4 @@
-#![allow(dead_code)]
-
-use std::cell::RefCell;
-use std::io;
-use std::rc::Rc;
+use std::{cell::RefCell, fmt, io::prelude::*, rc::Rc, str};
 
 use log::{debug, trace};
 
@@ -17,7 +13,7 @@ use crate::{
 
 pub struct Parser<R>
 where
-    R: io::Read + io::Seek,
+    R: Read + Seek,
 {
     pub document: Document,
 
@@ -40,7 +36,7 @@ where
 
 impl<R> Parser<R>
 where
-    R: io::Read + io::Seek,
+    R: Read + Seek,
 {
     pub fn new(r: R) -> Self {
         let document: Document = Default::default();
@@ -139,7 +135,11 @@ where
         target.insert(pos, node.into());
     }
 
-    pub(super) fn generic_raw_text_element_parse(&mut self, current_state: States, token: &Token) -> TransitionResult {
+    pub(super) fn generic_raw_text_element_parse(
+        &mut self,
+        current_state: States,
+        token: &Token,
+    ) -> TransitionResult {
         let node = dom::Element::new_html(token.tag_name().unwrap().clone());
         self.insert_html_element(node);
 
@@ -148,7 +148,11 @@ where
         States::text(Box::new(current_state)).into_transition_result()
     }
 
-    pub(super) fn generic_rcdata_element_parse(&mut self, current_state: States, token: &Token) -> TransitionResult {
+    pub(super) fn generic_rcdata_element_parse(
+        &mut self,
+        current_state: States,
+        token: &Token,
+    ) -> TransitionResult {
         let node = dom::Element::new_html(token.tag_name().unwrap().clone());
         self.insert_html_element(node);
 
@@ -178,7 +182,7 @@ where
                 break;
             }
             trace!(target: "html_parser::parser", "generate_implied_end_tags: Popping {} off stack", name);
-            self.open_elements.pop();
+            let _ = self.open_elements.pop();
         }
     }
 

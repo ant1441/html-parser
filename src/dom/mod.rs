@@ -1,4 +1,5 @@
 use derive_more::From;
+
 mod comment;
 mod document;
 mod document_fragment;
@@ -29,7 +30,6 @@ pub enum Node {
 }
 
 impl Node {
-    #[allow(dead_code)]
     fn len(&self) -> usize {
         match self {
             Node::DocumentType(_) => 0,
@@ -42,7 +42,6 @@ impl Node {
         }
     }
 
-    #[allow(dead_code)]
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
