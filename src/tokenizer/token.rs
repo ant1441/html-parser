@@ -227,21 +227,19 @@ impl Doctype {
     }
 
     pub(crate) fn push(&mut self, c: char) {
-        if self.name.is_none() {
+        if let Some(ref mut name) = self.name {
+            name.push(c);
+        } else {
             panic!("Cannot push to token::Docktype with no name");
         }
-        let mut name = self.name.take().unwrap();
-        name.push(c);
-        self.name.replace(name);
     }
 
     pub(crate) fn push_str(&mut self, string: &str) {
-        if self.name.is_none() {
+        if let Some(ref mut name) = self.name {
+            name.push_str(string);
+        } else {
             panic!("Cannot push to token::Docktype with no name");
         }
-        let mut name = self.name.take().unwrap();
-        name.push_str(string);
-        self.name.replace(name);
     }
 
     pub(crate) fn set_force_quirks(&mut self, f: ForceQuirksFlag) {
