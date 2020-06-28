@@ -262,7 +262,10 @@ where
                 TagName::H1 | TagName::H2 | TagName::H3 | TagName::H4 | TagName::H5 | TagName::H6
             ) =>
         {
-            if parser.open_elements.has_a_particular_element_in_button_scope(&TagName::P) {
+            if parser
+                .open_elements
+                .has_a_particular_element_in_button_scope(&TagName::P)
+            {
                 close_a_p_element(parser)
             }
 
@@ -316,7 +319,10 @@ where
                 }
             }
 
-            if parser.open_elements.has_a_particular_element_in_button_scope(&TagName::P) {
+            if parser
+                .open_elements
+                .has_a_particular_element_in_button_scope(&TagName::P)
+            {
                 close_a_p_element(parser)
             }
 
@@ -384,7 +390,10 @@ where
             todo!("InBody::on_token(EndTag('form'))");
         }
         Token::EndTag(tag) if tag.name == TagName::P => {
-            if parser.open_elements.has_a_particular_element_in_button_scope(&TagName::P) {
+            if parser
+                .open_elements
+                .has_a_particular_element_in_button_scope(&TagName::P)
+            {
                 parse_error("</p>");
 
                 // insert an HTML element for a "p" start tag token with no attributes.
@@ -397,7 +406,21 @@ where
             current_state.into_transition_result()
         }
         Token::EndTag(tag) if tag.name == TagName::Li => {
-            todo!("InBody::on_token(EndTag('li'))");
+            if parser
+                .open_elements
+                .has_a_particular_element_in_list_item_scope(&TagName::Li)
+            {
+                parse_error("</li>");
+                return current_state.into_transition_result();
+            }
+
+            parser.generate_implied_end_tags(Some(&TagName::Li));
+            if parser.current_node().unwrap().borrow().name != TagName::Li {
+                parse_error("</li>");
+            }
+            parser.open_elements.pop_until(&[&TagName::Li]);
+
+            current_state.into_transition_result()
         }
         Token::EndTag(tag) if (tag.name == TagName::Dd || tag.name == TagName::Dt) => {
             todo!("InBody::on_token(EndTag('dd|dt'))");
@@ -439,18 +462,21 @@ where
             panic!("This parser is very serious")
         }
         Token::StartTag(tag) if tag.name == TagName::A => {
-            if parser
+            if let Some((i, _)) = parser
                 .list_of_active_formatting_elements
                 .iter()
+                .enumerate()
                 .rev()
-                .take_while(|e| !e.is_marker())
-                .any(|e| e.is_element(&TagName::A))
+                .take_while(|(_, e)| !e.is_marker())
+                .find(|(_, e)| e.is_element(&TagName::A))
             {
                 parse_error("Existing A in active formatting elements");
                 // run the adoption agency algorithm for the token,
                 // then remove that element from the list of active formatting elements and
                 // the stack of open elements if the adoption agency algorithm
                 // didn't already remove it (it might not have if the element is not in table scope).
+                adoption_agency_algorithm(parser, t);
+                parser.list_of_active_formatting_elements.remove(i);
                 todo!("InBody::on_token('a')");
             }
             warn!("[TODO] InBody: 'A' - Reconstruct the active formatting elements, if any.");
