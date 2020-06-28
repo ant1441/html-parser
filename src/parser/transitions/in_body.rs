@@ -263,8 +263,27 @@ where
             ) =>
         {
             // If the stack of open elements has a p element in button scope, then close a p element.
+
             let current_node = parser.current_node().unwrap();
-            todo!("InBody::on_token('hN|...')");
+            let is_html = current_node.borrow().is_html();
+            if is_html
+                && matches!(
+                    current_node.borrow().name(),
+                    TagName::H1
+                        | TagName::H2
+                        | TagName::H3
+                        | TagName::H4
+                        | TagName::H5
+                        | TagName::H6
+                )
+            {
+                parse_error("<hN>");
+                let _ = parser.open_elements.pop();
+            }
+            let node = Element::new_html(tag.name.clone());
+            parser.insert_html_element(node);
+
+            current_state.into_transition_result()
         }
         Token::StartTag(tag) if (tag.name == TagName::Pre || tag.name == TagName::Listing) => {
             todo!("InBody::on_token('pre|listing')");
@@ -273,7 +292,34 @@ where
             todo!("InBody::on_token('form')");
         }
         Token::StartTag(tag) if tag.name == TagName::Li => {
-            todo!("InBody::on_token('li')");
+            parser.frameset_ok = FramesetOkFlag::NotOk;
+            for node in parser.open_elements.iter().rev() {
+                trace!("InBody:: <li>: Examining node: {:?}", node);
+                if node.borrow().name == TagName::Li {
+                    parser.generate_implied_end_tags(Some(&TagName::Li));
+                    if parser.current_node().unwrap().borrow().name != TagName::Li {
+                        parse_error("<li>");
+                    }
+                    parser.open_elements.pop_until(&[&TagName::Li]);
+                    break;
+                }
+
+                if node.borrow().category() == Category::Special
+                    && !matches!(
+                        node.borrow().name,
+                        TagName::Address | TagName::Div | TagName::P
+                    )
+                {
+                    break;
+                }
+            }
+
+            // If the stack of open elements has a p element in button scope, then close a p element.
+
+            let node = Element::new_html(tag.name.clone());
+            parser.insert_html_element(Rc::clone(&node));
+
+            current_state.into_transition_result()
         }
         Token::StartTag(tag) if (tag.name == TagName::Dd || tag.name == TagName::Dt) => {
             todo!("InBody::on_token('dd|dt')");
@@ -348,7 +394,32 @@ where
                 TagName::H1 | TagName::H2 | TagName::H3 | TagName::H4 | TagName::H5 | TagName::H6
             ) =>
         {
-            todo!("InBody::on_token(EndTag('hN|...'))");
+            if !parser.open_elements.contains_any_elements(&[
+                &TagName::H1,
+                &TagName::H2,
+                &TagName::H3,
+                &TagName::H4,
+                &TagName::H5,
+                &TagName::H6,
+            ]) {
+                parse_error("</hN>");
+                return current_state.into_transition_result();
+            }
+            parser.generate_implied_end_tags(None);
+            let current_node = parser.current_node().unwrap();
+            let current_node = current_node.borrow();
+            if !(current_node.namespace == Namespace::HTML && current_node.name == tag.name) {
+                parse_error("Unexpected tag")
+            }
+            parser.open_elements.pop_until(&[
+                &TagName::H1,
+                &TagName::H2,
+                &TagName::H3,
+                &TagName::H4,
+                &TagName::H5,
+                &TagName::H6,
+            ]);
+            current_state.into_transition_result()
         }
         Token::EndTag(tag) if tag.name == TagName::Other("sarcasm".to_string()) => {
             panic!("This parser is very serious")
