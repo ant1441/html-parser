@@ -380,7 +380,11 @@ where
             todo!("InBody::on_token(EndTag('form'))");
         }
         Token::EndTag(tag) if tag.name == TagName::P => {
-            todo!("InBody::on_token(EndTag('p'))");
+            warn!("[TODO] If the stack of open elements does not have a p element in button scope, then this is a parse error; insert an HTML element for a \"p\" start tag token with no attributes.");
+
+            close_a_p_element(parser);
+
+            current_state.into_transition_result()
         }
         Token::EndTag(tag) if tag.name == TagName::Li => {
             todo!("InBody::on_token(EndTag('li'))");
@@ -464,7 +468,14 @@ where
                     | TagName::U
             ) =>
         {
-            todo!("InBody::on_token('b|...')");
+            warn!("[TODO] InBody: 'input' - Reconstruct the active formatting elements, if any.");
+
+            let node = Element::new_html(tag.name.clone());
+            parser.insert_html_element(Rc::clone(&node));
+
+            parser.list_of_active_formatting_elements.push(node.into());
+
+            current_state.into_transition_result()
         }
         Token::StartTag(tag) if tag.name == TagName::Nobr => {
             todo!("InBody::on_token('nobr')");
@@ -716,4 +727,16 @@ where
             outer_loop_counter
         )
     }
+}
+
+fn close_a_p_element<R>(parser: &mut Parser<R>)
+where
+    R: io::Read + io::Seek,
+{
+    parser.generate_implied_end_tags(Some(&TagName::P));
+    let current_node = parser.current_node().unwrap();
+    if !(current_node.borrow().name == TagName::P) {
+        parse_error("Unexpected tag - expected 'p'");
+    }
+    parser.open_elements.pop_until(&[&TagName::P]);
 }
